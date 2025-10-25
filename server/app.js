@@ -19,31 +19,61 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:5501',
   'http://127.0.0.1:5501',
-  process.env.FRONTEND_URL,
-  'https://paella-giobel.netlify.app',
-  'https://*.netlify.app'
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://velvety-cat-86306e.netlify.app',
+  'https://68fc8979b1246f00086fa133--velvety-cat-86306e.netlify.app',
+  'https://*.netlify.app',
+  process.env.FRONTEND_URL
 ].filter(Boolean);
 
-
+// Configuración CORS COMPLETA Y FUNCIONAL
 const corsOptions = {
   origin: function (origin, callback) {
+    // Permitir requests sin origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    
+    // Verificar si el origen está en la lista permitida
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      // Comparación exacta
+      if (origin === allowedOrigin) return true;
+      
+      // Manejar wildcards como *.netlify.app
+      if (allowedOrigin.includes('*')) {
+        const domain = allowedOrigin.replace('*.', '');
+        return origin.endsWith(domain);
+      }
+      
+      return false;
+    });
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      console.error(`Origen no permitido por CORS: ${origin}`);
+      console.log('🚫 Origen bloqueado por CORS:', origin);
+      console.log('✅ Orígenes permitidos:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-  exposedHeaders: ['Content-Disposition'],
-  maxAge: 86400
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept', 
+    'X-Requested-With',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
+// Aplicar CORS - ESTO ES CLAVE
 app.use(cors(corsOptions));
-app.options('*', cors());
+app.options('*', cors(corsOptions)); // Manejar preflight requests
 
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -61,9 +91,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     maxAge: 86400000,
     httpOnly: true,
-    sameSite: 'lax',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    path: '/'
   }
 }));
 
@@ -79,14 +107,23 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Middleware adicional para headers CORS (redundante pero seguro)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  
+  if (origin && allowedOrigins.some(allowed => {
+    if (allowed.includes('*')) {
+      return origin.endsWith(allowed.replace('*.', ''));
+    }
+    return origin === allowed;
+  })) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -96,31 +133,31 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
-const galleryRoutes = require('./routes/gallery'); // Importar rutas de galería
-const accountsRoutes = require('./routes/accounts'); // Importar rutas de cuentas
+const galleryRoutes = require('./routes/gallery');
+const accountsRoutes = require('./routes/accounts');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/comentarios', comentariosRoutes);
-app.use('/api/gallery', galleryRoutes); // Usar rutas de galería
-app.use('/api/accounts', accountsRoutes); // Usar rutas de cuentas
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/accounts', accountsRoutes);
+
+// Ruta de prueba CORS
+app.get('/api/test-cors', (req, res) => {
+  res.json({
+    message: '✅ CORS funcionando correctamente',
+    timestamp: new Date().toISOString(),
+    allowedOrigins: allowedOrigins,
+    yourOrigin: req.headers.origin
+  });
+});
 
 app.post('/api/auth/complete-profile', authController.completeProfile);
 
-const staticOptions = {
-  setHeaders: (res, path) => {
-    res.set('Cache-Control', 'public, max-age=31536000');
-  },
-  fallthrough: false
-};
 // Configuración de archivos estáticos
-// Configurar middleware para archivos estáticos
-// Configuración de archivos estáticos
-// Servir el directorio 'client' como la raíz de la aplicación web
 app.use(express.static(path.join(__dirname, '../client')));
 
-// Servir directorios específicos dentro de 'client' bajo sus propias rutas
 app.use('/img', express.static(path.join(__dirname, '../client/img'), {
   setHeaders: (res) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -129,9 +166,9 @@ app.use('/img', express.static(path.join(__dirname, '../client/img'), {
 }));
 app.use('/css', express.static(path.join(__dirname, '../client/css')));
 app.use('/js', express.static(path.join(__dirname, '../client/js')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Mantener si 'uploads' es un directorio separado
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Rutas para archivos HTML específicos (si es necesario, de lo contrario, express.static ya los sirve)
+// Rutas para archivos HTML específicos
 app.get('/completar-perfil', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/completar-perfil.html'));
 });
@@ -140,11 +177,20 @@ app.get('/login-error', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/login-error.html'));
 });
 
-// La ruta raíz '/' ya es manejada por express.static para index.html
-// app.get('/', (req, res) => {
-//   res.sendFile(path.join(__dirname, '../client/index.html'));
-// });
+// Manejo de errores CORS específico
+app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS Error',
+      message: 'Origen no permitido',
+      yourOrigin: req.headers.origin,
+      allowedOrigins: allowedOrigins
+    });
+  }
+  next(err);
+});
 
+// Manejo general de errores
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.stack);
   if (err.name === 'UnauthorizedError') {
@@ -170,7 +216,6 @@ async function initializeDatabase() {
     console.log('✅ Conexión a PostgreSQL exitosa');
 
     // Eliminar el tipo ENUM si existe para evitar el error "ya existe un tipo"
-    // Esto es una solución temporal para el desarrollo. En producción, se usarían migraciones.
     try {
       await sequelize.query('DROP TYPE IF EXISTS "public"."enum_products_tipo";');
       console.log('🗑️ Tipo ENUM "enum_products_tipo" eliminado si existía.');
@@ -178,16 +223,15 @@ async function initializeDatabase() {
       console.error('❌ Error al intentar eliminar el tipo ENUM:', error);
     }
 
-    // Sincronizar modelos con la base de datos, añadiendo nuevas columnas si es necesario
-    // Usar `alter: true` temporalmente para añadir la columna `displayName` y recrear el tipo ENUM.
-    // Sincronizar modelos con la base de datos.
-    // Se usa `alter: false` para evitar el error de tipo ENUM ya existente.
-    // Si se necesitan nuevas columnas, se deben añadir manualmente o con migraciones.
+    // Sincronizar modelos con la base de datos
     await sequelize.sync({ force: false }); 
     console.log('🔄 Modelos sincronizados');
+    
     const PORT = process.env.PORT || 5500;
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+      console.log(`🌍 Entorno: ${process.env.NODE_ENV}`);
+      console.log(`✅ CORS configurado para:`, allowedOrigins);
     });
   } catch (error) {
     console.error('❌ Error de inicialización:', error);

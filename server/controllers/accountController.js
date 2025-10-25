@@ -1,5 +1,5 @@
 const { PlatformAccount } = require('../models');
-const fetch = require('node-fetch').default; // Importar node-fetch y acceder a su exportación por defecto
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)); // Importar node-fetch y acceder a su exportación por defecto
 
 // Función auxiliar para decodificar entidades HTML
 function decodeHtmlEntities(text) {

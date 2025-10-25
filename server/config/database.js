@@ -7,7 +7,7 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
-    dialect: 'postgres',
+    dialect: 'postgres', // ← AGREGAR ESTA LÍNEA EXPLÍCITAMENTE
     port: process.env.DB_PORT,
     logging: console.log,
     dialectOptions: {
@@ -20,7 +20,6 @@ const sequelize = new Sequelize(
       timestamps: true,
       underscored: true
     },
-    // Agregar estas opciones para mejor conexión
     pool: {
       max: 5,
       min: 0,
@@ -36,19 +35,12 @@ const sequelize = new Sequelize(
     await sequelize.authenticate();
     console.log('✅ Conexión a PostgreSQL exitosa');
     
-    // Verificar datos de conexión
     const [result] = await sequelize.query('SELECT current_database(), current_user');
     console.log('📊 Conectado a:', result[0].current_database);
     console.log('👤 Usuario:', result[0].current_user);
     
   } catch (error) {
     console.error('❌ Error de conexión:', error.message);
-    console.error('🔍 Detalles:', {
-      host: process.env.DB_HOST,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      port: process.env.DB_PORT
-    });
   }
 })();
 

@@ -1,3 +1,4 @@
+const supabase = require('../config/supabaseStorage');
 const { GalleryImage, sequelize } = require('../models');
 const multer = require('multer');
 const path = require('path');
@@ -153,4 +154,52 @@ exports.deleteGalleryImage = async (req, res) => {
     console.error('Error al eliminar imagen de galería:', error);
     res.status(500).json({ success: false, error: 'Error en el servidor' });
   }
+const uploadImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó imagen' });
+    }
+
+    // Generar nombre único
+    const timestamp = Date.now();
+    const fileExtension = path.extname(req.file.originalname);
+    const fileName = `gallery-${timestamp}${fileExtension}`;
+
+    // Subir a Supabase
+    const { data, error } = await supabase.storage
+      .from('paella-images')
+      .upload(`gallery/${fileName}`, req.file.buffer, {
+        contentType: req.file.mimetype
+      });
+
+    if (error) throw error;
+
+    // Obtener URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from('paella-images')
+      .getPublicUrl(`gallery/${fileName}`);
+
+    // Guardar en base de datos
+    const galleryImage = await GalleryImage.create({
+      filename: fileName,
+      caption: req.body.caption || '',
+      order: parseInt(req.body.order) || 0
+    });
+
+    res.json({
+      success: true,
+      image: {
+        id: galleryImage.id,
+        filename: fileName,
+        caption: galleryImage.caption,
+        url: publicUrlData.publicUrl
+      }
+    });
+
+  } catch (error) {
+    console.error('Error subiendo imagen:', error);
+    res.status(500).json({ error: 'Error subiendo imagen' });
+  }
+};
+
 };

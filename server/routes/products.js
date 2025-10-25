@@ -32,9 +32,8 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter, // Usar la función fileFilter definida
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  storage: multer.memoryStorage(), // Usar memory storage para Supabase
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB límite
 });
 
 // Obtener todos los productos (acceso público)
@@ -159,5 +158,7 @@ router.delete('/:id', protect, authorize(['admin']), async (req, res) => {
     res.status(500).json({ success: false, error: 'Error en el servidor' });
   }
 });
+router.post('/', upload.single('imagen'), productController.createProduct);
+router.put('/:id', upload.single('imagen'), productController.updateProduct);
 
 module.exports = router;

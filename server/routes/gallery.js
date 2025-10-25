@@ -1,22 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const galleryController = require('../controllers/galleryController');
-const { protect, authorize } = require('../middleware/auth');
 const multer = require('multer');
+
+// Configurar multer para memoria (para Supabase)
 const upload = multer({ 
-  storage: multer.memoryStorage(), // Usar memory storage para Supabase
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB límite
 });
 
-// Rutas públicas para obtener imágenes de la galería
-router.get('/', galleryController.getAllGalleryImages);
-router.get('/:id', galleryController.getGalleryImageById); // Nueva ruta para obtener una imagen por ID
+// ==================== RUTAS PÚBLICAS ====================
+// Obtener todas las imágenes de la galería
+router.get('/', galleryController.getGalleryImages);
 
-// Rutas protegidas para administración de galería (solo admin)
-router.post('/', protect, authorize(['admin']), galleryController.uploadGalleryImage);
-router.put('/:id', protect, authorize(['admin']), galleryController.updateGalleryImage);
-router.delete('/:id', protect, authorize(['admin']), galleryController.deleteGalleryImage);
-router.post('/', upload.single('imagen'), productController.createProduct);
-router.put('/:id', upload.single('imagen'), productController.updateProduct);
+// Obtener imagen específica por ID
+router.get('/:id', galleryController.getGalleryImageById);
+
+// ==================== RUTAS DE ADMINISTRACIÓN ====================
+// Subir nueva imagen (sin autenticación por ahora)
+router.post('/', upload.single('imagen'), galleryController.uploadImage);
+
+// Actualizar información de imagen (sin autenticación por ahora)
+router.put('/:id', galleryController.updateImage);
+
+// Eliminar imagen (sin autenticación por ahora) 
+router.delete('/:id', galleryController.deleteImage);
 
 module.exports = router;

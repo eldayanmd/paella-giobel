@@ -1,19 +1,17 @@
 const BASE_URL = (() => {
-  // Si estamos en desarrollo y usando Live Server
-  if (window.location.origin.includes('127.0.0.1:5500') && 
-      window.location.pathname.includes('/client/')) {
+  const hostname = window.location.hostname;
+  
+  // Desarrollo local
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:5500';
   }
   
-  // Caso normal
-  const currentOrigin = window.location.origin;
-  // Si el origen actual incluye '5500' (puerto de Live Server), usarlo.
-  // De lo contrario, asumir que la API está en el mismo origen que la aplicación web.
-  return currentOrigin.includes('5500') ? 'http://localhost:5500' 
-         : currentOrigin; // O un valor fijo si la API está en un dominio diferente
+  // Producción - BACKEND en Railway
+  return 'https://paella-giobel-production.up.railway.app';
 })();
 
 console.log('BASE_URL configurada como:', BASE_URL);
+
 // Nueva función para manejar rutas de imágenes
 function getCorrectImagePath(imagePath) {
   if (!imagePath) return '/img/default-paella.jpg';

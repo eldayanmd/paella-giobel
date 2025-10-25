@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paellas Miami - Auténtica Paella Valenciana</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Paella Giobel</div>
+            <ul>
+                <li><a href="#inicio" class="active" id="inicio-btn"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="#productos" id="productos-btn"><i class="fas fa-utensils"></i> Productos</a></li>
+                <li><a href="#contactar" id="contactar-btn"><i class="fas fa-phone-alt"></i> Contactar</a></li>
+                <li><a href="#opiniones" id="opiniones-btn"><i class="fas fa-star"></i> Opiniones</a></li>
+                <li><a href="#galeria" id="galeria-btn"><i class="fas fa-images"></i> Galería</a></li>
+                <li id="user-nav">
+                    <a href="#modal-login" class="btn-login modal-trigger">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </a>
+                    <span>|</span>
+                    <a href="#modal-registro" class="btn-registro modal-trigger">
+                        <i class="fas fa-user-plus"></i> Registrarse
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Resto del contenido HTML permanece igual -->
+    <section id="inicio" class="hero">
+        <div class="hero-content">
+            <h1>Paellas que enamoran</h1>
+            <p>Disfruta auténticas paellas, directamente desde Miami.</p>
+            <a href="#productos" class="btn-menu">Ver Menú</a>
+        </div>
+    </section>
+
+    <section class="about">
+        <div class="container">
+            <h2>Sobre nosotros</h2>
+            <p>Bienvenidos a nuestra experiencia de paellas. En el corazón de Miami, ofrecemos una variedad irresistible de recetas tradicionales, preparadas con amor y los mejores ingredientes.</p>
+            
+            <div class="about-grid">
+                <div class="about-item">
+                    <h3>Nuestra Historia</h3>
+                    <p>Desde nuestros inicios, hemos estado comprometidos con la satisfacción del cliente, logrando construir una sólida reputación en la comunidad.</p>
+                </div>
+                <div class="about-item">
+                    <h3>Nuestra Misión</h3>
+                    <p>Brindar un servicio excepcional y crear momentos únicos a través de nuestra oferta culinaria, donde cada paella cuenta una historia.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="productos" class="products">
+        <div class="container">
+            <h2>Sabores auténticos</h2>
+            <p class="subtitle">Elaboración de Paellas a Domicilio en Miami</p>
+            
+           <!-- En la sección de productos, reemplaza todo por: -->
+<div class="product-grid" id="dynamic-products-container">
+  <!-- Los productos se cargarán aquí desde la base de datos -->
+</div>
+            <div id="admin-products-container" style="text-align: center; margin-top: 40px; display: none;">
+            <a href="#product-management-modal" id="manage-products-btn" class="btn-admin modal-trigger" style="display: none;">
+                <i class="fas fa-utensils"></i> Administrar Productos
+            </a>
+        </div>
+        </div>
+    </section>
+
+    <section id="contactar" class="contact-enhanced">
+        <div class="container">
+            <h2>Contáctanos</h2>
+            <p class="subtitle">¡Haz tu pedido o consulta por nuestros servicios!</p>
+            
+            <div class="contact-grid" id="dynamic-contact-accounts-container">
+                <!-- Las cuentas de contacto se cargarán aquí dinámicamente -->
+            </div>
+            <!-- Botón de gestión de cuentas (solo para admin) -->
+            <div id="admin-accounts-container" style="text-align: center; margin-top: 40px; display: none;">
+                <button id="manage-accounts-btn" class="btn-admin" data-modal-target="account-management-modal">
+                    <i class="fas fa-users-cog"></i> Gestionar Cuentas
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="opiniones" class="testimonials">
+    <div class="container">
+        <h2>Opiniones de Clientes</h2>
+        <p class="subtitle">Lo que dicen nuestros clientes sobre la experiencia Paella Giobel</p>
+        
+        <!-- Contenedor dinámico para comentarios (ahora horizontal) -->
+        <div id="comentarios-container" class="testimonial-grid">
+            <!-- Los comentarios se cargarán dinámicamente desde la base de datos -->
+        </div>
+
+        <!-- Flechas de navegación -->
+        <div class="testimonials-nav">
+            <button id="prev-comment" aria-label="Comentario anterior">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button id="next-comment" aria-label="Siguiente comentario">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Promedio de estrellas Michelin -->
+        <div id="average-rating-container" class="average-rating-container" style="
+            margin-top: 30px;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff8e1, #ffe0b2); /* Degradado suave */
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            transform: scale(0.95);
+            opacity: 0;
+            animation: fadeInScale 0.8s ease-out forwards;
+            border: 2px solid #ffc107; /* Borde dorado */
+        ">
+            <h3 style="
+                margin: 0 0 10px 0;
+                color: #e67e22; /* Naranja vibrante */
+                font-family: 'Playfair Display', serif;
+                font-size: 1.8rem;
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            ">Calificación Michelin</h3>
+            <div id="average-rating-display" style="
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #ffc107; /* Dorado */
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                text-shadow: 0 0 10px rgba(255,193,7,0.5); /* Efecto de brillo */
+            ">
+                <i class="fas fa-star" style="color: #ffc107;"></i>
+                <span id="average-rating-value">--</span>
+            </div>
+            <p style="
+                margin: 10px 0 0 0;
+                color: #666;
+                font-size: 0.9rem;
+            ">Basado en todas las opiniones de nuestros clientes.</p>
+        </div>
+
+        <!-- Animación para el promedio de estrellas -->
+        <style>
+            @keyframes fadeInScale {
+                from {
+                    transform: scale(0.95);
+                    opacity: 0;
+                }
+                to {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+        </style>
+
+        <!-- Botón para agregar comentario (solo visible para usuarios logueados) -->
+        <div id="add-comment-container" style="text-align: center; margin-top: 40px; display: none;">
+            <button id="add-comment-btn" class="btn-submit" style="padding: 12px 30px; border-radius: 50px; font-size: 1.1rem;">
+                <i class="fas fa-plus-circle"></i> Comparte tu experiencia
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para agregar comentario -->
+    <div id="comment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Cuéntanos tu experiencia</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <form id="comment-form">
+                <div class="form-group">
+                    <label>¿Cómo calificarías tu experiencia?</label>
+                    <div class="star-rating">
+                        <i class="fas fa-star" data-rating="5"></i>
+                        <i class="fas fa-star" data-rating="4"></i>
+                        <i class="fas fa-star" data-rating="3"></i>
+                        <i class="fas fa-star" data-rating="2"></i>
+                        <i class="fas fa-star" data-rating="1"></i>
+                    </div>
+                    <input type="hidden" id="estrellas" name="estrellas" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comentario">Tu opinión</label>
+                    <textarea id="comentario" name="comentario" rows="5" required placeholder="¿Qué te pareció nuestro servicio y productos?"></textarea>
+                </div>
+                
+                <div id="comment-response" style="display: none;"></div>
+                
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Publicar opinión
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+
+
+   <section id="galeria" class="gallery">
+    <div class="container">
+        <h2>Galería de Imágenes</h2>
+        <p>Descubre la variedad de nuestros productos y eventos.</p>
+        
+        <div class="gallery-grid">
+            <!-- Las imágenes se cargarán dinámicamente desde la base de datos -->
+        </div>
+        <div id="admin-gallery-container" style="text-align: center; margin-top: 40px; display: none;">
+            <button id="manage-gallery-btn" class="btn-admin" data-modal-target="gallery-management-modal">
+                <i class="fas fa-images"></i> Gestionar Galería
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para vista ampliada -->
+    <div id="gallery-modal" class="gallery-modal">
+        <span class="modal-close" aria-label="Cerrar modal">&times;</span>
+        <div class="modal-image-container">
+            <img id="modal-image" class="modal-content" alt="">
+            <div class="image-caption" id="modal-caption"></div>
+        </div>
+        <div class="modal-options">
+            <button id="download-btn"><i class="fas fa-download"></i> Descargar</button>
+            <button id="share-btn"><i class="fas fa-share-alt"></i> Compartir</button>
+            <button id="prev-btn"><i class="fas fa-chevron-left"></i> Anterior</button>
+            <button id="next-btn">Siguiente <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+</section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Paella Giobel</h3>
+                    <p>Auténtica paella valenciana en Miami</p>
+                    <div class="social-links" id="footer-social-links">
+                        <!-- Los enlaces sociales se cargarán dinámicamente aquí -->
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Enlaces</h4>
+                    <ul class="footer-nav-links">
+                        <li><a href="#inicio">Inicio</a></li>
+                        <li><a href="#productos">Productos</a></li>
+                        <li><a href="#opiniones">Opiniones</a></li>
+                        <li><a href="#galeria">Galería</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-legal">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#modal-privacidad" class="modal-trigger">Política de Privacidad</a></li>
+                        <li><a href="#modal-terminos" class="modal-trigger">Términos de Servicio</a></li>
+                        <li><a href="#modal-cookies" class="modal-trigger">Configuración de Cookies</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>© 2025 Paella Giobel. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modales -->
+    <div id="modal-privacidad" class="modal">
+        <div class="modal-content">
+            <h3>Política de Privacidad</h3>
+            <div class="modal-text">
+                <p><strong>Última actualización:</strong> 17/06/2023</p>
+                <h4>1. Información que recopilamos</h4>
+                <p>Recopilamos información cuando realizas un pedido o te registras en nuestro sitio.</p>
+                <h4>2. Uso de la información</h4>
+                <p>La información que recopilamos puede ser usada para:
+                <ul>
+                    <li>Personalizar tu experiencia</li>
+                    <li>Mejorar nuestro sitio web</li>
+                    <li>Procesar transacciones</li>
+                </ul>
+                </p>
+                <h4>3. Protección de datos</h4>
+                <p>Implementamos medidas de seguridad para mantener la seguridad de tu información personal.</p>
+            </div>
+            <button class="modal-close">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="modal-terminos" class="modal">
+        <div class="modal-content">
+            <h3>Términos de Servicio</h3>
+            <div class="modal-text">
+                <h4>1. Pedidos y pagos</h4>
+                <p>Los pedidos están sujetos a disponibilidad. Aceptamos pagos en efectivo y transferencias bancarias.</p>
+                <h4>2. Cancelaciones</h4>
+                <p>Puedes cancelar tu pedido con al menos 24 horas de anticipación.</p>
+                <h4>3. Derechos de autor</h4>
+                <p>Todo el contenido de este sitio web es propiedad exclusiva de Paella Giobel.</p>
+            </div>
+            <button class="modal-close">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Nuevo Banner de Cookies -->
+    <div id="cookie-banner" class="cookie-banner">
+        <p>Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestra <a href="#modal-privacidad" class="modal-trigger">política de cookies</a>.</p>
+        <button id="accept-cookies-btn" class="btn-cookie">Aceptar</button>
+    </div>
+
+   <!-- Modal de registro - Versión actualizada con verificación por correo -->
+<div id="modal-registro" class="modal">
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    
+    <!-- Paso 1: Formulario de registro inicial -->
+    <div id="register-step1">
+      <div class="modal-header">
+        <h2><i class="fas fa-user-plus"></i> Crear Cuenta</h2>
+        <p class="modal-subtitle">Regístrate para hacer pedidos más rápido y recibir ofertas exclusivas</p>
+      </div>
+      
+      <form id="form-registro" class="form-registro">
+        <div class="form-group">
+          <label for="nombre"><i class="fas fa-user"></i> Nombre completo</label>
+          <input type="text" id="nombre" name="nombre" required placeholder="Ej: Juan Pérez">
+        </div>
+        
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope"></i> Correo electrónico</label>
+          <input type="email" id="email" name="email" required placeholder="Ej: ejemplo@dominio.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="register-password"><i class="fas fa-lock"></i> Contraseña</label>
+          <input type="password" id="register-password" name="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+          
+          <!-- Barras de fortaleza con animaciones -->
+          <div class="password-strength">
+            <span class="strength-bar pulse-animation"></span>
+            <span class="strength-bar pulse-animation"></span>
+            <span class="strength-bar pulse-animation"></span>
+            <div class="strength-wave"></div>
+          </div>
+        </div>
+        
+        <div class="form-check">
+          <input type="checkbox" id="terms" name="terms" required>
+          <label for="terms">Acepto los <a href="#modal-terminos" class="modal-trigger">Términos y Condiciones</a></label>
+        </div>
+        
+        <div id="response-message" style="display: none;"></div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-paper-plane"></i> Enviar código de verificación
+          </button>
+        </div>
+      </form>
+      
+      <div class="social-register">
+        <div class="divider">
+          <span>o regístrate con</span>
+        </div>
+        
+        <div class="social-buttons">
+          <button type="button" class="btn-social google" id="google-register-btn">
+            <i class="fab fa-google"></i> Google
+          </button>
+        </div>
+      </div>
+      
+      <div class="login-link">
+        ¿Ya tienes cuenta? <a href="#modal-login" class="modal-trigger close-current">Inicia sesión aquí</a>
+      </div>
+    </div>
+    
+    <!-- Paso 2: Verificación por código -->
+    <div id="register-step2" style="display: none;">
+      <div class="modal-header">
+        <h2><i class="fas fa-mail-bulk"></i> Verifica tu correo</h2>
+        <p class="modal-subtitle">Hemos enviado un código de 6 dígitos a <strong id="user-email"></strong></p>
+        <p class="modal-subtitle">Revisa tu bandeja de entrada o spam</p>
+      </div>
+      
+      <form id="verification-form">
+        <div class="code-inputs">
+          <input type="text" maxlength="1" class="code-input" data-index="0" autocomplete="off">
+          <input type="text" maxlength="1" class="code-input" data-index="1" autocomplete="off">
+          <input type="text" maxlength="1" class="code-input" data-index="2" autocomplete="off">
+          <input type="text" maxlength="1" class="code-input" data-index="3" autocomplete="off">
+          <input type="text" maxlength="1" class="code-input" data-index="4" autocomplete="off">
+          <input type="text" maxlength="1" class="code-input" data-index="5" autocomplete="off">
+        </div>
+        
+        <div id="countdown" style="text-align: center; margin: 15px 0; color: #666;">
+          El código expira en <span style="font-weight: bold; color: #e67e22;">15:00</span>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-check-circle"></i> Verificar y completar registro
+          </button>
+        </div>
+      </form>
+      
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="#" id="resend-code" style="color: #e67e22; text-decoration: none;">
+          <i class="fas fa-redo"></i> No recibí el código, reenviar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div id="modal-login" class="modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-header">
+                <h2><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</h2>
+                <p class="modal-subtitle">Ingresa tus credenciales para acceder a tu cuenta</p>
+            </div>
+            
+            <form id="form-login" class="form-login">
+                <div class="form-group">
+                    <label for="login-email"><i class="fas fa-envelope"></i> Correo electrónico</label>
+                    <input type="email" id="login-email" name="email" required placeholder="Ej: ejemplo@dominio.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password"><i class="fas fa-lock"></i> Contraseña</label>
+                    <input type="password" id="login-password" name="password" required placeholder="Ingresa tu contraseña">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> <span>Iniciar Sesión</span>
+                    </button>
+                </div>
+
+                <div class="social-register">
+                    <div class="divider">
+                        <span>o inicia sesión con</span>
+                    </div>
+                    
+                    <div class="social-buttons">
+                        <button type="button" class="btn-social google" id="google-login-btn">
+                            <i class="fab fa-google"></i> Google
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="login-response" style="display: none;"></div>
+            </form>
+            
+            <div class="login-link">
+                ¿No tienes cuenta? <a href="#modal-registro" class="modal-trigger close-current">Regístrate aquí</a>
+            </div>
+        </div>
+    </div>
+
+
+
+<!-- Modal de Gestión de Comentarios -->
+<div id="modal-gestion-comentarios" class="modal">
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    <div class="modal-header">
+      <h2><i class="fas fa-comments"></i> Gestión de Comentarios</h2>
+      <p id="contador-comentarios">0 comentarios por revisar</p>
+    </div>
+    <div class="modal-body">
+      <div class="admin-comment-options">
+        <button id="btn-ver-pendientes" class="btn-admin-option active">
+          <i class="fas fa-hourglass-half"></i> Pendientes
+        </button>
+        <button id="btn-eliminar-comentarios" class="btn-admin-option">
+          <i class="fas fa-trash-alt"></i> Eliminar Comentarios
+        </button>
+      </div>
+      <div id="lista-comentarios-pendientes">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i> Cargando comentarios...
+        </div>
+      </div>
+      <div id="lista-todos-comentarios" style="display: none;">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i> Cargando todos los comentarios...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    <script src="js/script.js"></script>
+
+    <!-- Script para la nueva barra de navegación con efectos únicos -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const header = document.querySelector('header');
+        const navLinks = document.querySelectorAll('nav ul li a');
+        const logo = document.querySelector('.logo');
+        const scrollProgressBar = document.getElementById('scroll-progress-bar');
+        const sections = document.querySelectorAll('section');
+        const offset = 90; // Altura del header para el desplazamiento
+
+        // Función para actualizar el enlace activo de la navegación
+        const observerOptions = {
+            root: null,
+            rootMargin: `-${offset}px 0px -${window.innerHeight - offset - 1}px 0px`,
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const currentActive = entry.target.id;
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        link.style.transform = '';
+                        if (link.getAttribute('href').includes(currentActive)) {
+                            link.classList.add('active');
+                            link.style.transform = 'translateY(-3px)';
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+        
+        // Efecto de scroll en el header
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+                logo.style.fontSize = '2rem'; // Ajustar tamaño del logo al hacer scroll
+            } else {
+                header.classList.remove('scrolled');
+                logo.style.fontSize = '2.5rem';
+            }
+        });
+        
+        // Función para crear efecto de partículas
+        function createParticles(x, y, color) {
+            const particleCount = 15; // Más partículas
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.backgroundColor = color;
+                
+                // Dirección aleatoria para las partículas
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 30 + Math.random() * 40; // Mayor distancia
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+                
+                document.body.appendChild(particle);
+                
+                // Eliminar partícula después de la animación
+                setTimeout(() => {
+                    particle.remove();
+                }, 900); // Animación más larga
+            }
+        }
+        
+        // Función para crear efecto de onda
+        function createRipple(event, element) {
+            const rect = element.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple-effect';
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            
+            element.appendChild(ripple);
+            
+            // Eliminar onda después de la animación
+            setTimeout(() => {
+                ripple.remove();
+            }, 700); // Animación más larga
+        }
+        
+        // Activar elemento de navegación al hacer clic
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Crear efecto de partículas
+                const rect = this.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                createParticles(x, y, 'var(--accent-color)'); // Usar color de acento
+                
+                // Crear efecto de onda
+                createRipple(e, this);
+                
+                // Aplicar clase de animación de cambio de pestaña
+                this.classList.add('tab-switch');
+                setTimeout(() => {
+                    this.classList.remove('tab-switch');
+                }, 600);
+                
+                // Actualizar elemento activo (manejado por IntersectionObserver)
+                // navLinks.forEach(l => l.classList.remove('active'));
+                // this.classList.add('active');
+                
+                // Desplazamiento suave
+                if (this.hash) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.hash);
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop - offset, // Usar offset
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Efecto hover para los enlaces
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.transition = 'all 0.3s ease';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('active')) {
+                    this.style.transform = '';
+                }
+            });
+        });
+    });
+    </script>
+
+<!-- Modal de Gestión de Productos Simplificado -->
+<div id="product-management-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-utensils"></i> Gestión de Productos</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+
+        <!-- Panel de Navegación Principal -->
+        <div id="product-admin-nav" class="admin-panel">
+            <p>Selecciona la acción que deseas realizar:</p>
+            <div class="admin-options-grid">
+                <button class="admin-option-card" data-target="add-product-view">
+                    <i class="fas fa-plus-circle"></i>
+                    <h3>Agregar Producto</h3>
+                </button>
+                <button class="admin-option-card" data-target="edit-product-view">
+                    <i class="fas fa-edit"></i>
+                    <h3>Editar Producto</h3>
+                </button>
+                <button class="admin-option-card" data-target="delete-product-view">
+                    <i class="fas fa-trash-alt"></i>
+                    <h3>Eliminar Producto</h3>
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista para Agregar/Editar Producto -->
+        <div id="add-product-view" class="admin-panel" style="display: none;">
+            <div class="view-header">
+                <button class="back-to-main-menu"><i class="fas fa-arrow-left"></i> Volver</button>
+                <h3 id="product-form-title">Agregar Nuevo Producto</h3>
+            </div>
+            <div class="form-container">
+                <form id="modern-product-form" class="modern-form">
+                    <input type="hidden" id="product-id-modern" name="id">
+                    <div class="form-grid">
+                        <!-- Columna Izquierda -->
+                        <div class="form-column">
+                            <div class="form-section">
+                                <h4>Información Básica</h4>
+                                <div class="form-group">
+                                    <label for="product-name-modern">Nombre del Producto</label>
+                                    <input type="text" id="product-name-modern" name="nombre" required placeholder="Ej: Paella de Mariscos Premium">
+                                    <div class="input-underline"></div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="product-price-modern">Precio ($)</label>
+                                        <input type="number" id="product-price-modern" name="precio" min="0" step="0.01" required placeholder="29.99">
+                                        <div class="input-underline"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="product-type-modern">Categoría</label>
+                                        <select id="product-type-modern" name="tipo" required>
+                                            <option value="">Seleccionar categoría</option>
+                                            <option value="tradicional">Tradicional</option>
+                                            <option value="vegetariana">Vegetariana</option>
+                                            <option value="mariscos">Mariscos</option>
+                                            <option value="carne">Carne</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product-description-modern">Descripción</label>
+                                    <textarea id="product-description-modern" name="descripcion" rows="4" required placeholder="Describe el producto con detalles atractivos..."></textarea>
+                                    <div class="input-underline"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Columna Derecha -->
+                        <div class="form-column">
+                            <div class="form-section">
+                                <h4>Imagen del Producto</h4>
+                                <div class="modern-upload-area" id="modern-upload-area">
+                                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                    <h4>Arrastra la imagen aquí</h4>
+                                    <p>o haz clic para seleccionar</p>
+                                    <input type="file" id="product-image-modern" name="images" accept="image/*" style="display: none;">
+                                    <div class="upload-formats"><small>PNG, JPG, GIF hasta 5MB</small></div>
+                                </div>
+                                <div class="image-preview-modern" id="image-preview-modern" style="display: none;">
+                                    <div class="preview-header">
+                                        <span>Vista Previa</span>
+                                        <button type="button" class="remove-image-btn" id="remove-image-btn"><i class="fas fa-times"></i></button>
+                                    </div>
+                                    <div class="preview-content"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-footer">
+                        <div class="form-response" id="modern-form-response"></div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary back-to-main-menu">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn-primary" id="save-product-btn">
+                                <i class="fas fa-save"></i> <span>Guardar Producto</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Vista para Editar Producto -->
+        <div id="edit-product-view" class="admin-panel" style="display: none;">
+            <div class="view-header">
+                <button class="back-to-main-menu"><i class="fas fa-arrow-left"></i> Volver</button>
+                <h3>Editar Productos</h3>
+            </div>
+            <div class="products-grid" id="edit-products-grid">
+                <!-- Los productos para editar se cargarán aquí -->
+            </div>
+        </div>
+
+        <!-- Vista para Eliminar Producto -->
+        <div id="delete-product-view" class="admin-panel" style="display: none;">
+            <div class="view-header">
+                <button class="back-to-main-menu"><i class="fas fa-arrow-left"></i> Volver</button>
+                <h3>Eliminar Productos</h3>
+            </div>
+            <div class="products-grid" id="delete-products-grid">
+                <!-- Los productos para eliminar se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Confirmación de Eliminación -->
+<div id="confirm-delete-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h2>
+      <button class="modal-close">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <p id="confirm-delete-message">¿Estás seguro de que deseas eliminar este elemento?</p>
+      
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" id="cancel-delete-btn">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button type="button" class="btn-submit" id="confirm-delete-action-btn">
+          <i class="fas fa-trash-alt"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Gestión de Galería -->
+<div id="gallery-management-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-images"></i> Gestión de Galería</h2>
+      <p class="modal-subtitle">Administra las imágenes de tu galería</p>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-actions">
+        <button type="button" class="btn-submit" id="add-new-gallery-image-btn">
+          <i class="fas fa-plus-circle"></i> Agregar Nueva Imagen
+        </button>
+      </div>
+      
+      <div id="gallery-management-list">
+        <!-- Aquí se cargarán las imágenes de la galería con opciones de editar/eliminar -->
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i> Cargando imágenes...
+        </div>
+      </div>
+
+      <!-- Formulario de agregar/editar imagen (inicialmente oculto) -->
+      <div id="gallery-form-view" style="display: none;">
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" id="back-to-gallery-list-btn-form">
+            <i class="fas fa-arrow-left"></i> Volver a la Lista
+          </button>
+        </div>
+        <form id="gallery-form" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="gallery-image-file">Imagen</label>
+            <div class="image-upload-container">
+              <div class="upload-area" id="gallery-image-upload-area">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Arrastra la imagen aquí o haz clic</p>
+                <input type="file" id="gallery-image-file" name="image" accept="image/*">
+              </div>
+              <div class="image-preview" id="gallery-image-preview"></div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="gallery-image-caption">Título/Descripción (opcional)</label>
+            <input type="text" id="gallery-image-caption" name="caption" placeholder="Ej: Paella de Mariscos en evento">
+          </div>
+
+          <div class="form-group">
+            <label for="gallery-image-order">Orden (número)</label>
+            <input type="number" id="gallery-image-order" name="order" min="0" value="0" placeholder="Ej: 1">
+          </div>
+          
+          <div id="gallery-form-response" style="display: none;"></div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="closeModal('gallery-management-modal')">
+              <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-save"></i> Guardar Imagen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Gestión de Cuentas -->
+<div id="account-management-modal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-users-cog"></i> Gestión de Cuentas</h2>
+      <p class="modal-subtitle">Administra las cuentas de redes sociales y contacto</p>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-actions">
+        <button type="button" class="btn-submit" id="add-new-account-btn">
+          <i class="fas fa-plus-circle"></i> Agregar Nueva Cuenta
+        </button>
+      </div>
+      
+      <div id="accounts-management-list" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+        <!-- Aquí se cargarán las cuentas con opciones de editar/eliminar -->
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i> Cargando cuentas...
+        </div>
+      </div>
+
+      <!-- Formulario de agregar/editar cuenta (inicialmente oculto) -->
+      <div id="account-form-view" class="admin-panel" style="display: none;">
+        <div class="view-header">
+          <button class="back-to-main-menu" id="back-to-accounts-list-btn-form"><i class="fas fa-arrow-left"></i> Volver</button>
+          <h3 id="account-form-title">Agregar Nueva Cuenta</h3>
+        </div>
+        <div class="form-container">
+          <form id="account-form" class="modern-form">
+            <input type="hidden" id="account-id-modern" name="id">
+            <div class="form-grid">
+              <!-- Columna Única para Cuentas -->
+              <div class="form-column">
+                <div class="form-section">
+                  <h4>Información de la Cuenta</h4>
+                  <div class="form-group">
+                    <label for="account-platform">Plataforma</label>
+                    <select id="account-platform" name="platform" required>
+                      <option value="">Selecciona una plataforma</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="twitter">Twitter</option>
+                      <option value="tiktok">TikTok</option>
+                      <option value="email">Correo Electrónico</option>
+                      <option value="phone">Teléfono</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="account-username">Usuario / Identificador</label>
+                    <input type="text" id="account-username" name="username" required placeholder="Ej: @paellagiobel o +1234567890">
+                    <div class="input-underline"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="account-link">Enlace (URL)</label>
+                    <input type="url" id="account-link" name="link" required placeholder="Ej: https://instagram.com/paellagiobel">
+                    <div class="input-underline"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="account-display-name">Nombre a Mostrar (Verificado)</label>
+                    <input type="text" id="account-display-name" name="displayName" readonly placeholder="Se rellenará automáticamente al verificar">
+                    <div class="input-underline"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="form-footer">
+              <div id="account-verification-response" class="form-response" style="display: none;"></div>
+              <div class="form-actions">
+                <button type="button" class="btn-primary btn-verify-account" id="verify-account-btn">
+                  <i class="fas fa-check-circle"></i> Verificar Cuenta
+                </button>
+                <button type="button" class="btn-secondary back-to-main-menu">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-primary" id="save-account-btn" disabled>
+                  <i class="fas fa-save"></i> <span>Guardar Cuenta</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

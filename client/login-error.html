@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error de Autenticación - Paella Giobel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+
+        :root {
+    --primary-color: #A0522D; /* Marrón tierra, cálido */
+    --secondary-color: #D2B48C; /* Beige claro, arena */
+    --accent-color: #FFD700; /* Dorado, para detalles y acentos */
+    --text-color: #36454F; /* Gris oscuro, elegante */
+    --light-color: #FDF5E6; /* Blanco crema, base */
+    --dark-color: #2F4F4F; /* Gris pizarra, profundo */
+    --header-bg: rgba(255, 250, 240, 0.95); /* Fondo de encabezado translúcido */
+    --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.15);
+    --transition-speed: 0.4s;
+    --radius: 14px;
+
+
+        .error-container {
+            background-color: #D2B48C;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;   
+        }
+        .error-content {
+            background-color: #D2B48C;
+            max-width: 500px;
+            padding: 30px;
+            background: rgb(220, 226, 177);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .error-content:hover {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: skewX(-20deg);
+            transition: 0.7s;
+        }
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+        .btn-submit:hover {
+            background: linear-gradient(45deg, var(--dark-color), var(--primary-color)); /* Invertir degradado al pasar el ratón */
+            transform: translateY(-5px) scale(1.02); /* Efecto de elevación y ligero escalado */
+            box-shadow: 0 8px 25px rgba(160, 82, 45, 0.4); /* Sombra más pronunciada */
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-content">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #FFD700; margin-bottom: 20px;"></i>
+            <h1>Error en la autenticación</h1>
+            <p>Ocurrió un problema al intentar iniciar sesión con Google. Por favor, intenta nuevamente.</p>
+            <a href="/" class="btn-submit" style="
+                padding: 12px 25px; 
+                background: linear-gradient(45deg, var(--primary-color), var(--accent-color)); 
+                color: white;
+                border: none;
+                border-radius: 30px; 
+                font-size: 1rem; 
+                font-weight: 700; 
+                cursor: pointer;
+                transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+                display: inline-flex; 
+                align-items: center;
+                justify-content: center;
+                gap: 8px; 
+                box-shadow: 0 6px 20px rgba(160, 82, 45, 0.3); 
+                position: relative; 
+                overflow: hidden; 
+                text-decoration: none 
+              ">
+                Volver al inicio
+            </a>
+        </div>
+    </div>
+</body>
+</html>

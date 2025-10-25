@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completar Perfil - Paella Giobel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #A0522D;
+            --secondary-color: #D2B48C;
+            --text-color: #36454F;
+            --light-color: #FDF5E6;
+            --error-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #response-message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: var(--error-color);
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-lock"></i> Establece tu contraseña</h2>
+        <p style="text-align: center; margin-bottom: 2rem;">Por favor, crea una contraseña segura para tu cuenta</p>
+        
+        <form id="complete-profile-form">
+            <div class="form-group">
+                <label for="complete-password">Nueva Contraseña</label>
+                <input type="password" id="complete-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Confirmar Contraseña</label>
+                <input type="password" id="confirm-password" required minlength="6" placeholder="Repite tu contraseña">
+            </div>
+            <div id="response-message"></div>
+            <button type="submit" id="submit-btn">
+                <span class="btn-content">
+                    <span id="btn-text">Guardar Contraseña</span>
+                    <span id="btn-spinner" class="hidden">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </span>
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Función para mostrar mensajes de estado
+        function showMessage(type, message) {
+            const responseDiv = document.getElementById('response-message');
+            responseDiv.style.display = 'block';
+            responseDiv.className = type;
+            responseDiv.innerHTML = `
+                <div>
+                    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> 
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Función para manejar el estado de carga del botón
+        function setLoading(isLoading) {
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            
+            submitBtn.disabled = isLoading;
+            btnText.style.display = isLoading ? 'none' : 'inline-block';
+            btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
+        }
+
+        // Función para decodificar JWT manualmente
+        function decodeJWT(token) {
+            if (!token) return null;
+            
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) return null;
+                
+                const payload = parts[1]
+                    .replace(/-/g, '+')
+                    .replace(/_/g, '/');
+                
+                const padLength = 4 - (payload.length % 4);
+                const paddedPayload = payload + (padLength < 4 ? '='.repeat(padLength) : '');
+                
+                return JSON.parse(atob(paddedPayload));
+            } catch (e) {
+                console.error('Error decodificando JWT:', e);
+                return null;
+            }
+        }
+
+        // Manejador del formulario
+     document.getElementById('complete-profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const password = document.getElementById('complete-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const token = new URLSearchParams(window.location.search).get('token');
+
+    // Validaciones
+    if (password !== confirmPassword) {
+        showMessage('error', 'Las contraseñas no coinciden');
+        return;
+    }
+
+    if (password.length < 6) {
+        showMessage('error', 'La contraseña debe tener al menos 6 caracteres');
+        return;
+    }
+
+    // Mostrar estado de carga
+    setLoading(true);
+    showMessage('loading', 'Guardando tu contraseña...');
+
+    try {
+        const response = await fetch('http://localhost:5500/api/auth/complete-profile', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        token: token,
+        password: password
+    })
+});
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al guardar contraseña');
+        }
+
+        // Verificar que la respuesta contiene los datos necesarios
+        if (!data || !data.token) {
+            throw new Error('Respuesta del servidor incompleta');
+        }
+
+        // Guardar el token en localStorage
+        localStorage.setItem('authToken', data.token);
+        
+        // Mostrar mensaje de éxito
+        showMessage('success', '¡Perfil completado con éxito! Redirigiendo...');
+        
+        // Redirigir a la página principal con el token
+        setTimeout(() => {
+            window.location.href = `/?token=${encodeURIComponent(data.token)}&freshLogin=true`;
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('error', error.message || 'Error al completar el perfil');
+        setLoading(false);
+    }
+});
+
+        // Verificar si hay token en la URL al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = new URLSearchParams(window.location.search).get('token');
+            if (!token) {
+                showMessage('error', 'Token no encontrado. Por favor, inicia sesión nuevamente.');
+                document.getElementById('complete-profile-form').style.display = 'none';
+            }
+        });
+    </script>
+
+    <script>
+document.getElementById('complete-profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const password = document.getElementById('complete-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const token = new URLSearchParams(window.location.search).get('token');
+
+    // Validaciones
+    if (password !== confirmPassword) {
+        showMessage('error', 'Las contraseñas no coinciden');
+        return;
+    }
+
+    if (password.length < 6) {
+        showMessage('error', 'La contraseña debe tener al menos 6 caracteres');
+        return;
+    }
+
+    // Mostrar estado de carga
+    setLoading(true);
+    showMessage('loading', 'Guardando tu contraseña...');
+
+    try {
+        const response = await fetch('/api/auth/complete-profile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                token: token,
+                password: password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al guardar contraseña');
+        }
+
+        // Verificar que la respuesta contiene los datos necesarios
+        if (!data || !data.token) {
+            throw new Error('Respuesta del servidor incompleta');
+        }
+
+        // Guardar el token en localStorage
+        localStorage.setItem('authToken', data.token);
+        
+        // Mostrar mensaje de éxito
+        showMessage('success', '¡Perfil completado con éxito! Redirigiendo...');
+        
+        // Redirigir a la URL original o a la página principal
+        const redirectUrl = sessionStorage.getItem('originalUrl') || '/';
+        setTimeout(() => {
+            window.location.href = `${redirectUrl}?token=${encodeURIComponent(data.token)}&freshLogin=true`;
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('error', error.message || 'Error al completar el perfil');
+        setLoading(false);
+    }
+});
+
+</script>
+</body>
+</html>

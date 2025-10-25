@@ -5,6 +5,7 @@ const { protect, authorize } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const productController = require('../controllers/productController');
 
 // Configuración mejorada de Multer
 const storage = multer.diskStorage({

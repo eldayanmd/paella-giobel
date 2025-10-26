@@ -81,12 +81,15 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', protect, authorize(['admin']), upload.any(), async (req, res) => {
+router.post('/', protect, authorize(['admin']), upload.single('imagen'), async (req, res) => {
   try {
     const { nombre, descripcion, precio, tipo } = req.body;
     
-    // Buscar el archivo de imagen entre todos los archivos subidos
-    const imageFile = req.files ? req.files.find(file => file.mimetype.startsWith('image/')) : null;
+    // CAMBIAR ESTO:
+    // const imageFile = req.files ? req.files.find(file => file.mimetype.startsWith('image/')) : null;
+    
+    // POR ESTO:
+    const imageFile = req.file;
 
     if (!imageFile) {
       return res.status(400).json({ success: false, error: 'Imagen requerida' });
@@ -95,11 +98,10 @@ router.post('/', protect, authorize(['admin']), upload.any(), async (req, res) =
     const newProduct = await Product.create({
       nombre,
       descripcion,
-      imagen: imageFile.filename.replace(/^img\//, ''), // Asegurar que solo se guarda el nombre del archivo
+      imagen: imageFile.filename, // Ya no necesitas replace
       precio: parseFloat(precio),
       tipo
     });
-    console.log('Producto creado con imagen (limpia):', newProduct.imagen); // Log para depuración
 
     res.status(201).json({ success: true, product: newProduct });
   } catch (error) {
@@ -111,9 +113,9 @@ router.post('/', protect, authorize(['admin']), upload.any(), async (req, res) =
     });
   }
 });
-
 // Actualizar producto (solo admin)
-router.put('/:id', protect, authorize(['admin']), upload.any(), async (req, res) => {
+router.put('/:id', protect, authorize(['admin']), upload.single('imagen'), async (req, res) => {
+
   try {
     const product = await Product.findByPk(req.params.id);
     if (!product) {
@@ -123,7 +125,8 @@ router.put('/:id', protect, authorize(['admin']), upload.any(), async (req, res)
     const { nombre, descripcion, precio, tipo } = req.body;
     
     // Buscar el archivo de imagen entre todos los archivos subidos
-    const imageFile = req.files ? req.files.find(file => file.mimetype.startsWith('image/')) : null;
+    const imageFile = req.file;
+
 
     // Actualizar imagen solo si se subió una nueva
     if (imageFile) {
@@ -159,7 +162,5 @@ router.delete('/:id', protect, authorize(['admin']), async (req, res) => {
     res.status(500).json({ success: false, error: 'Error en el servidor' });
   }
 });
-router.post('/', upload.single('imagen'), productController.createProduct);
-router.put('/:id', upload.single('imagen'), productController.updateProduct);
 
 module.exports = router;

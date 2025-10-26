@@ -14,6 +14,9 @@ const fs = require('fs');
 
 const app = express();
 
+// ✅ CONFIGURACIÓN CRÍTICA PARA RAILWAY - DEBE IR AL INICIO
+app.set('trust proxy', 1);
+
 const allowedOrigins = [
   'http://localhost:5500',
   'http://127.0.0.1:5500',
@@ -27,18 +30,23 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
+// ✅ CONFIGURACIÓN RATE LIMIT CORRECTA
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Demasiadas solicitudes desde esta IP',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Configuración CORS COMPLETA Y FUNCIONAL
 const corsOptions = {
   origin: function (origin, callback) {
-    // Permitir requests sin origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // Verificar si el origen está en la lista permitida
     const isAllowed = allowedOrigins.some(allowedOrigin => {
-      // Comparación exacta
       if (origin === allowedOrigin) return true;
       
-      // Manejar wildcards como *.netlify.app
       if (allowedOrigin.includes('*')) {
         const domain = allowedOrigin.replace('*.', '');
         return origin.endsWith(domain);
@@ -71,15 +79,14 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Aplicar CORS - ESTO ES CLAVE
+// Aplicar middlewares en ORDEN CORRECTO
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Manejar preflight requests
-
+app.options('*', cors(corsOptions));
 app.use(helmet({
   contentSecurityPolicy: false,
   hsts: false
 }));
-
+app.use(limiter); // ✅ Rate limit aplicado después de CORS
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
@@ -99,15 +106,7 @@ require('./config/passport');
 app.use(passport.initialize());
 app.use(passport.session());
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(limiter);
-
-// Middleware adicional para headers CORS (redundante pero seguro)
+// Middleware adicional para headers CORS
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
@@ -130,6 +129,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Rutas
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');

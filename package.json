@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Sitio web de Paella Giobel",
   "scripts": {
-    "start": "echo 'Sitio estático - No necesita build'"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   }
+
 }

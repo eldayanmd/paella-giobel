@@ -8,25 +8,9 @@ const fs = require('fs');
 const productController = require('../controllers/productController');
 
 // Configuración mejorada de Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../client/img');
-    fs.mkdirSync(uploadPath, { recursive: true });
-    console.log('Multer guardando en:', uploadPath); // Log para depuración
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = file.originalname.replace(ext, '').toLowerCase().replace(/\s+/g, '-');
-    const filename = `paella-${Date.now()}${ext}`;
-    console.log('Multer nombre de archivo:', filename); // Log para depuración
-    cb(null, filename);
-  }
-});
-
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);

@@ -353,46 +353,34 @@ router.get('/google', (req, res, next) => {
 router.get('/google/callback',
   passport.authenticate('google', {
     session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}/login-error`,
-    failureMessage: true
+    failureRedirect: `${process.env.FRONTEND_URL}/login-error`
   }),
   (req, res) => {
     try {
-      console.log('✅ Usuario autenticado:', req.user);
-      console.log('✅ AuthInfo:', req.authInfo);
+      // Generar token JWT más corto
+      const tokenPayload = {
+        id: req.user.id,
+        email: req.user.email,
+        nombre: req.user.nombre
+      };
       
-      if (!req.authInfo || !req.authInfo.redirectUrl) {
-        console.error('❌ No hay redirectUrl en authInfo');
-        
-        // Generar token de emergencia
-        const tokenPayload = {
-          id: req.user.id,
-          email: req.user.email,
-          nombre: req.user.nombre || req.user.email.split('@')[0],
-          picture: req.user.picture,
-          authMethod: 'google'
-        };
-        
-        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
-        const userName = req.user.nombre || req.user.email.split('@')[0] || 'Usuario';
-        
-        const redirectUrl = `${process.env.FRONTEND_URL}?token=${token}&user=${encodeURIComponent(userName)}`;
-        console.log('🔄 Redireccionando a (fallback):', redirectUrl);
-        return res.redirect(redirectUrl);
-      }
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const userName = req.user.nombre || 'Usuario';
       
-      console.log('🔄 Redireccionando a:', req.authInfo.redirectUrl);
-      res.redirect(req.authInfo.redirectUrl);
+      // Usar fragment identifier en lugar de query parameters
+      const redirectUrl = `${process.env.FRONTEND_URL}#token=${token}&user=${encodeURIComponent(userName)}`;
+      
+      console.log('🔄 Redireccionando con fragment:', redirectUrl);
+      res.redirect(redirectUrl);
       
     } catch (error) {
       console.error('❌ Error en callback de Google:', error);
-      
-      // Redirección de emergencia en caso de error
-      const emergencyRedirect = `${process.env.FRONTEND_URL}/login-error?error=auth_failed`;
-      res.redirect(emergencyRedirect);
+      res.redirect(`${process.env.FRONTEND_URL}/login-error`);
     }
   }
 );
+
+
 router.post('/complete-profile', async (req, res) => {
     try {
         const { token, password } = req.body;

@@ -1,5 +1,5 @@
 const BASE_URL = (() => {
-  const hostname = window.location.hostname;
+  const hostname = window.location.origin;
   
   // Desarrollo local
   if (hostname === 'localhost' || hostname === '127.0.0.1') {

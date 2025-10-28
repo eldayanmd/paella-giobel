@@ -529,25 +529,33 @@ async function completeRegistration(email) {
 }
 async function sendVerificationCode(email) {
   try {
-    const response = await fetch('/api/auth/send-verification', {
+    console.log('📧 Enviando código a:', email);
+    
+    // Timeout de 15 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Request-Source': 'web-client'
-      },
-      body: JSON.stringify({ email })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+      signal: controller.signal
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const text = await response.text();
-    if (!text) throw new Error("Respuesta vacía del servidor");
-    return JSON.parse(text);
+
+    clearTimeout(timeoutId);
+    
+    const result = await response.json();
+    console.log('📧 Respuesta del servidor:', result);
+    
+    return result;
   } catch (error) {
-    console.error('Error al enviar código:', error);
-    return { 
-      error: error.message || 'Error al comunicarse con el servidor'
-    };
+    console.error('❌ Error enviando código:', error);
+    
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Timeout: El servidor tardó demasiado en responder' };
+    }
+    
+    return { success: false, error: 'Error de conexión' };
   }
 }
 function setupGoogleAuth() {

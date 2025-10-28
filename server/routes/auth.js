@@ -31,27 +31,45 @@ const transporter = nodemailer.createTransport({
 router.post('/send-verification', async (req, res) => {
   try {
     const { email } = req.body;
+    
+    console.log('📧 Iniciando envío de código a:', email);
+    console.log('🔑 EMAIL_USER:', process.env.EMAIL_USER ? 'PRESENTE' : 'AUSENTE');
+    console.log('🔑 EMAIL_PASS:', process.env.EMAIL_PASS ? 'PRESENTE' : 'AUSENTE');
 
     // Generar código de 6 dígitos
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('🔢 Código generado:', code);
     
     // Guardar código por 10 minutos
     verificationCodes.set(email, {
       code,
-      expires: Date.now() + 10 * 60 * 1000 // 10 minutos
+      expires: Date.now() + 10 * 60 * 1000
     });
 
-    // Configurar Nodemailer con Gmail
+    console.log('🚀 Configurando transporter de Nodemailer...');
+    
+    // Configurar Nodemailer con timeout más corto para debug
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER, // paellagiobel@gmail.com
-        pass: process.env.EMAIL_PASS  // App Password de 16 caracteres
-      }
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      connectionTimeout: 10000, // 10 segundos para debug
+      greetingTimeout: 10000,
+      socketTimeout: 10000
     });
 
+    console.log('✅ Transporter configurado, verificando conexión...');
+    
+    // Verificar conexión primero
+    await transporter.verify();
+    console.log('✅ Conexión SMTP verificada');
+
+    console.log('📤 Enviando email...');
+    
     // Enviar email
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: '"Paella Giobel" <paellagiobel@gmail.com>',
       to: email,
       subject: '🔐 Código de Verificación - Paella Giobel',
@@ -63,10 +81,11 @@ router.post('/send-verification', async (req, res) => {
             ${code}
           </div>
           <p>Este código expira en 10 minutos.</p>
-          <p><small>Si no solicitaste este código, ignora este mensaje.</small></p>
         </div>
       `
     });
+
+    console.log('✅ Email enviado exitosamente:', info.messageId);
 
     res.json({ 
       success: true, 
@@ -74,14 +93,50 @@ router.post('/send-verification', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error enviando código:', error);
+    console.error('❌ Error enviando código:', error);
+    console.error('❌ Detalles del error:', {
+      code: error.code,
+      command: error.command,
+      message: error.message
+    });
+    
     res.status(500).json({ 
       success: false, 
-      error: 'Error enviando código de verificación' 
+      error: 'Error enviando código de verificación',
+      details: error.message 
     });
   }
 });
+// Ruta temporal para probar email
+router.get('/test-email', async (req, res) => {
+  try {
+    console.log('🧪 Probando configuración de email...');
+    
+    const testTransporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      connectionTimeout: 10000
+    });
 
+    console.log('✅ Transporter creado, verificando...');
+    await testTransporter.verify();
+    console.log('✅ Conexión SMTP funcionando');
+    
+    res.json({ 
+      success: true, 
+      message: 'Email configurado correctamente' 
+    });
+  } catch (error) {
+    console.error('❌ Error SMTP:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
 // Endpoint para verificar código
 router.post('/verify-code', async (req, res) => {
   try {

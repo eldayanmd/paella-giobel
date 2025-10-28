@@ -50,15 +50,17 @@ router.post('/send-verification', async (req, res) => {
     
     // Configurar Nodemailer con timeout más corto para debug
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      connectionTimeout: 10000, // 10 segundos para debug
-      greetingTimeout: 10000,
-      socketTimeout: 10000
-    });
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true para 465, false para otros puertos
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
     console.log('✅ Transporter configurado, verificando conexión...');
     

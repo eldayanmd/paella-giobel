@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const db = require('../models');
 
 // Configurar Supabase client
 const supabase = createClient(
@@ -10,21 +11,21 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-// Configurar multer para memoria (para Supabase)
+// Configurar multer para memoria
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB límite
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// Modelo de Galería (ajusta según tu modelo real)
-const { Gallery } = require('../models'); // Ajusta la ruta según tu estructura
+// Usar el modelo correcto
+const GalleryImage = db.GalleryImage;
 
 // ==================== RUTAS PÚBLICAS ====================
 
 // Obtener todas las imágenes de la galería
 router.get('/', async (req, res) => {
   try {
-    const images = await Gallery.findAll({
+    const images = await GalleryImage.findAll({
       order: [['orden', 'ASC'], ['created_at', 'DESC']]
     });
     
@@ -36,7 +37,8 @@ router.get('/', async (req, res) => {
     console.error('Error al obtener galería:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Error al cargar galería' 
+      error: 'Error al cargar galería',
+      details: error.message
     });
   }
 });
@@ -44,7 +46,7 @@ router.get('/', async (req, res) => {
 // Obtener imagen específica por ID
 router.get('/:id', async (req, res) => {
   try {
-    const image = await Gallery.findByPk(req.params.id);
+    const image = await GalleryImage.findByPk(req.params.id);
     if (!image) {
       return res.status(404).json({ 
         success: false, 
@@ -102,11 +104,11 @@ router.post('/', upload.single('imagen'), async (req, res) => {
       .getPublicUrl(fileName);
 
     // 3. Guardar en base de datos
-    const newImage = await Gallery.create({
+    const newImage = await GalleryImage.create({
       imagen: publicUrl,
       caption: caption || '',
       orden: parseInt(order) || 0,
-      filename: fileName // Guardar nombre del archivo para futuras referencias
+      filename: fileName
     });
 
     res.status(201).json({ 
@@ -131,7 +133,7 @@ router.put('/:id', async (req, res) => {
     const { caption, order } = req.body;
     const imageId = req.params.id;
 
-    const image = await Gallery.findByPk(imageId);
+    const image = await GalleryImage.findByPk(imageId);
     if (!image) {
       return res.status(404).json({ 
         success: false, 
@@ -165,7 +167,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const imageId = req.params.id;
 
-    const image = await Gallery.findByPk(imageId);
+    const image = await GalleryImage.findByPk(imageId);
     if (!image) {
       return res.status(404).json({ 
         success: false, 

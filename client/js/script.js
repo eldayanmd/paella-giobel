@@ -7,7 +7,7 @@ const BASE_URL = (() => {
   }
   
   // Producción - BACKEND en Railway
-  return 'https://paella-giobel-production.up.railway.app';
+  return 'https://paella-giobel.onrender.com';
 })();
 
 console.log('BASE_URL configurada como:', BASE_URL);

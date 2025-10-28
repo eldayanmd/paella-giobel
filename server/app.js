@@ -191,6 +191,16 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+
 // Manejo general de errores
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.stack);

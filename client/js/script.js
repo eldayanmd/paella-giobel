@@ -121,6 +121,29 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+function handleGoogleCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  const user = urlParams.get('user');
+
+  if (token) {
+    // Guardar token en localStorage
+    localStorage.setItem('authToken', token);
+    if (user) {
+      localStorage.setItem('userName', decodeURIComponent(user));
+    }
+    
+    console.log('✅ Token de Google guardado:', token);
+    
+    // Limpiar la URL (remover parámetros)
+    window.history.replaceState({}, document.title, window.location.pathname);
+    
+    // Recargar la página para aplicar los cambios de autenticación
+    window.location.reload();
+    return true;
+  }
+  return false;
+}
 
 
 function setupModals() {
@@ -949,7 +972,10 @@ document.addEventListener('DOMContentLoaded', function() {
   setupAccountManagement(); // Nuevo: Configurar la gestión de cuentas
   loadContactAccounts(); // Cargar las cuentas de contacto dinámicamente
   setupCookies(); // Inicializar la lógica de cookies
-  setupProductFormListeners(); // Asegurarse de que los listeners del formulario de producto se configuren
+  setupProductFormListeners(); 
+   if (handleGoogleCallback()) {
+    return; // Si hubo token, se recargará la página
+  }// Asegurarse de que los listeners del formulario de producto se configuren
 
   // Configurar el botón de gestión de comentarios si no existe
   const addCommentContainer = document.getElementById('add-comment-container');

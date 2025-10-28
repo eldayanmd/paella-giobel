@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "Sitio web de Paella Giobel",
   "scripts": {
-    "start": "node server/app.js",
-    "dev": "nodemon server/app.js"
+    "start": "cd server && node app.js",
+    "dev": "cd server && nodemon app.js",
+    "install-deps": "cd server && npm install"
+  },
+  "engines": {
+    "node": "18.x"
   }
-
 }

@@ -122,29 +122,49 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 function handleGoogleCallback() {
+  console.log('🔄 Verificando callback de Google...');
+  
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
   const user = urlParams.get('user');
 
+  console.log('📋 Parámetros de URL:', {
+    token: token ? 'PRESENTE' : 'AUSENTE',
+    user: user || 'No definido',
+    fullURL: window.location.href
+  });
+
   if (token) {
+    console.log('✅ Token encontrado en URL:', token.substring(0, 20) + '...');
+    
     // Guardar token en localStorage
     localStorage.setItem('authToken', token);
-    if (user) {
-      localStorage.setItem('userName', decodeURIComponent(user));
-    }
     
-    console.log('✅ Token de Google guardado:', token);
+    // Guardar usuario
+    const userName = user && user !== 'undefined' ? decodeURIComponent(user) : 'Usuario';
+    localStorage.setItem('userName', userName);
     
-    // Limpiar la URL (remover parámetros)
-    window.history.replaceState({}, document.title, window.location.pathname);
+    console.log('💾 Token guardado en localStorage');
+    console.log('👤 Usuario guardado:', userName);
     
-    // Recargar la página para aplicar los cambios de autenticación
+    // Limpiar la URL - método más robusto
+    const cleanUrl = window.location.origin + window.location.pathname;
+    console.log('🧹 Limpiando URL a:', cleanUrl);
+    window.history.replaceState({}, document.title, cleanUrl);
+    
+    // Recargar la página para aplicar cambios
+    console.log('🔄 Recargando página...');
     window.location.reload();
     return true;
+  } else {
+    console.log('❌ No se encontró token en la URL');
+    console.log('🔍 Búsqueda en URL:', {
+      search: window.location.search,
+      hash: window.location.hash
+    });
   }
   return false;
 }
-
 
 function setupModals() {
   // Eliminar event listeners anteriores para evitar duplicados

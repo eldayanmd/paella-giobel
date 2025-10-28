@@ -26,7 +26,7 @@ const GalleryImage = db.GalleryImage;
 router.get('/', async (req, res) => {
   try {
     const images = await GalleryImage.findAll({
-      order: [['orden', 'ASC'], ['created_at', 'DESC']]
+      order: [['order', 'ASC'], ['created_at', 'DESC']] // CAMBIÉ 'orden' por 'order'
     });
     
     res.json({ 
@@ -103,12 +103,12 @@ router.post('/', upload.single('imagen'), async (req, res) => {
       .from('images')
       .getPublicUrl(fileName);
 
-    // 3. Guardar en base de datos
+    // 3. Guardar en base de datos - USANDO LOS NOMBRES CORRECTOS
     const newImage = await GalleryImage.create({
-      imagen: publicUrl,
-      caption: caption || '',
-      orden: parseInt(order) || 0,
-      filename: fileName
+      filename: fileName, // Este campo SÍ existe en tu tabla
+      caption: caption || '', // Este campo SÍ existe
+      order: parseInt(order) || 0, // CAMBIÉ 'orden' por 'order'
+      image_path: publicUrl // Usar image_path en lugar de imagen
     });
 
     res.status(201).json({ 
@@ -141,9 +141,9 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    // Actualizar campos
+    // Actualizar campos - USANDO NOMBRES CORRECTOS
     if (caption !== undefined) image.caption = caption;
-    if (order !== undefined) image.orden = parseInt(order);
+    if (order !== undefined) image.order = parseInt(order); // CAMBIÉ 'orden' por 'order'
 
     await image.save();
 

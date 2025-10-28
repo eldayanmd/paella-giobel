@@ -12,18 +12,27 @@ passport.use('google', new GoogleStrategy({
     proxy: true
 }, async (req, accessToken, refreshToken, profile, done) => {
     try {
+        console.log('📸 Perfil de Google recibido:', {
+            displayName: profile.displayName,
+            email: profile.emails[0].value,
+            id: profile.id
+        });
+
         const email = profile.emails[0].value;
         let user = await User.findOne({ where: { email } });
 
         if (!user) {
             user = await User.create({
-                nombre: profile.displayName,
+                nombre: profile.displayName || email.split('@')[0],
                 email: email,
                 google_id: profile.id,
                 picture: profile.photos[0]?.value,
                 auth_method: 'google',
                 profile_complete: false
             });
+            console.log('✅ Nuevo usuario creado:', user.nombre);
+        } else {
+            console.log('✅ Usuario existente:', user.nombre);
         }
 
         // Generar token JWT
@@ -35,26 +44,16 @@ passport.use('google', new GoogleStrategy({
             authMethod: 'google'
         };
 
-        if (!user.password) {
-            tokenPayload.needsPassword = true;
-        }
-
-        const token = jwt.sign(
-            tokenPayload,
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        // Guardar la URL original en la sesión si existe
-        const originalUrl = req.session.originalUrl || '/';
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
         
-        const redirectUrl = user.password
-    ? `${process.env.FRONTEND_URL}${originalUrl}?token=${encodeURIComponent(token)}&source=google`
-    : `${process.env.FRONTEND_URL}/completar-perfil.html?token=${encodeURIComponent(token)}&source=google&originalUrl=${encodeURIComponent(originalUrl)}`;
+        // Redirección DIRECTA al frontend con token
+        const redirectUrl = `${process.env.FRONTEND_URL}?token=${token}&user=${encodeURIComponent(user.nombre || user.email.split('@')[0])}`;
+        
+        console.log('🔗 Redirect URL generada:', redirectUrl);
         return done(null, user, { redirectUrl });
 
     } catch (error) {
-        console.error('Error en autenticación Google:', error);
+        console.error('❌ Error en autenticación Google:', error);
         return done(error);
     }
 }));

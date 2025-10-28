@@ -341,44 +341,58 @@ router.post('/login', async (req, res) => {
 });
 
 
-router.get('/google',
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    prompt: 'select_account'
-  })
-);
+router.get('/google', (req, res, next) => {
+    console.log('🚀 Iniciando autenticación Google...');
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        session: false
+    })(req, res, next);
+});
 
 // En tu ruta de callback de Google
 router.get('/google/callback',
   passport.authenticate('google', {
     session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}/login-error`
+    failureRedirect: `${process.env.FRONTEND_URL}/login-error`,
+    failureMessage: true
   }),
   (req, res) => {
     try {
-      // Generar token JWT
-      const token = jwt.sign(
-        { 
+      console.log('✅ Usuario autenticado:', req.user);
+      console.log('✅ AuthInfo:', req.authInfo);
+      
+      if (!req.authInfo || !req.authInfo.redirectUrl) {
+        console.error('❌ No hay redirectUrl en authInfo');
+        
+        // Generar token de emergencia
+        const tokenPayload = {
           id: req.user.id,
           email: req.user.email,
-          name: req.user.name 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+          nombre: req.user.nombre || req.user.email.split('@')[0],
+          picture: req.user.picture,
+          authMethod: 'google'
+        };
+        
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const userName = req.user.nombre || req.user.email.split('@')[0] || 'Usuario';
+        
+        const redirectUrl = `${process.env.FRONTEND_URL}?token=${token}&user=${encodeURIComponent(userName)}`;
+        console.log('🔄 Redireccionando a (fallback):', redirectUrl);
+        return res.redirect(redirectUrl);
+      }
       
-      // Redirigir al frontend con el token EN LOS PARÁMETROS
-      const redirectUrl = `${process.env.FRONTEND_URL}?token=${token}&user=${encodeURIComponent(req.user.name)}`;
-      console.log('Redireccionando a:', redirectUrl);
-      res.redirect(redirectUrl);
+      console.log('🔄 Redireccionando a:', req.authInfo.redirectUrl);
+      res.redirect(req.authInfo.redirectUrl);
       
     } catch (error) {
-      console.error('Error en callback de Google:', error);
-      res.redirect(`${process.env.FRONTEND_URL}/login-error`);
+      console.error('❌ Error en callback de Google:', error);
+      
+      // Redirección de emergencia en caso de error
+      const emergencyRedirect = `${process.env.FRONTEND_URL}/login-error?error=auth_failed`;
+      res.redirect(emergencyRedirect);
     }
   }
 );
-
 router.post('/complete-profile', async (req, res) => {
     try {
         const { token, password } = req.body;

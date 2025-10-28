@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const productController = require('../controllers/productController');
+const { createClient } = require('@supabase/supabase-js');
 
 // Configuración mejorada de Multer
 const upload = multer({
@@ -19,6 +20,12 @@ const upload = multer({
     }
   }
 });
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 
 // Obtener todos los productos (acceso público)
 router.get('/', async (req, res) => {
@@ -67,21 +74,32 @@ router.get('/:id', async (req, res) => {
 router.post('/', protect, authorize(['admin']), upload.single('imagen'), async (req, res) => {
   try {
     const { nombre, descripcion, precio, tipo } = req.body;
-    
-    // CAMBIAR ESTO:
-    // const imageFile = req.files ? req.files.find(file => file.mimetype.startsWith('image/')) : null;
-    
-    // POR ESTO:
     const imageFile = req.file;
 
     if (!imageFile) {
       return res.status(400).json({ success: false, error: 'Imagen requerida' });
     }
 
+    // Subir a Supabase Storage
+    const fileName = `products/paella-${Date.now()}${path.extname(imageFile.originalname)}`;
+    
+    const { data, error } = await supabase.storage
+      .from('product-images') // Tu bucket en Supabase
+      .upload(fileName, imageFile.buffer, {
+        contentType: imageFile.mimetype
+      });
+
+    if (error) throw error;
+
+    // Obtener URL pública
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName);
+
     const newProduct = await Product.create({
       nombre,
       descripcion,
-      imagen: imageFile.filename, // Ya no necesitas replace
+      imagen: publicUrl, // Guardar URL de Supabase
       precio: parseFloat(precio),
       tipo
     });
@@ -96,6 +114,7 @@ router.post('/', protect, authorize(['admin']), upload.single('imagen'), async (
     });
   }
 });
+
 // Actualizar producto (solo admin)
 router.put('/:id', protect, authorize(['admin']), upload.single('imagen'), async (req, res) => {
 

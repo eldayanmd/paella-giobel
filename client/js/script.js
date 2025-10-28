@@ -124,45 +124,40 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 function handleGoogleCallback() {
   console.log('🔄 Verificando callback de Google...');
   
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const user = urlParams.get('user');
+  // Obtener el fragment (parte después del #)
+  const fragment = window.location.hash.substring(1);
+  console.log('🔍 Fragment completo:', fragment);
+  
+  // Parsear parámetros del fragment
+  const fragmentParams = new URLSearchParams(fragment);
+  const token = fragmentParams.get('token');
+  const user = fragmentParams.get('user');
 
-  console.log('📋 Parámetros de URL:', {
-    token: token ? 'PRESENTE' : 'AUSENTE',
+  console.log('📋 Parámetros del fragment:', {
+    token: token ? `PRESENTE (${token.substring(0, 20)}...)` : 'AUSENTE',
     user: user || 'No definido',
-    fullURL: window.location.href
+    fragment: fragment
   });
 
   if (token) {
-    console.log('✅ Token encontrado en URL:', token.substring(0, 20) + '...');
+    console.log('✅ Token encontrado en fragment');
     
-    // Guardar token en localStorage
+    // Guardar en localStorage
     localStorage.setItem('authToken', token);
+    localStorage.setItem('userName', decodeURIComponent(user) || 'Usuario');
     
-    // Guardar usuario
-    const userName = user && user !== 'undefined' ? decodeURIComponent(user) : 'Usuario';
-    localStorage.setItem('userName', userName);
+    console.log('💾 Token y usuario guardados en localStorage');
     
-    console.log('💾 Token guardado en localStorage');
-    console.log('👤 Usuario guardado:', userName);
-    
-    // Limpiar la URL - método más robusto
+    // Limpiar el fragment de la URL
     const cleanUrl = window.location.origin + window.location.pathname;
-    console.log('🧹 Limpiando URL a:', cleanUrl);
     window.history.replaceState({}, document.title, cleanUrl);
     
-    // Recargar la página para aplicar cambios
     console.log('🔄 Recargando página...');
     window.location.reload();
     return true;
-  } else {
-    console.log('❌ No se encontró token en la URL');
-    console.log('🔍 Búsqueda en URL:', {
-      search: window.location.search,
-      hash: window.location.hash
-    });
   }
+  
+  console.log('❌ No se encontró token en el fragment');
   return false;
 }
 

@@ -7,6 +7,7 @@ const { User, VerificationCode } = require('../models');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 require('dotenv').config();
+const verificationCodes = new Map();
 
 console.log('User model imported correctly?', User !== undefined);
 
@@ -28,71 +29,59 @@ const transporter = nodemailer.createTransport({
 
 
 router.post('/send-verification', async (req, res) => {
-  console.log("Llegó a send-verification"); 
   try {
     const { email } = req.body;
 
-    // Validación profesional del email
-    if (!email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-      return res.status(400).json({ error: "Email inválido" });
-    }
-
-    // Generar código seguro de 6 dígitos
-    const code = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos de validez
-
-    // Guardar en base de datos
-    await VerificationCode.create({
-  email,
-  code,
-  expiresAt,
-  attempts: 0
-});
-
-    // Plantilla de email profesional
-    const mailOptions = {
-      from: `"Paella Giobel" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: '🟠 Tu Código de Verificación - Paella Giobel',
-      html: `
-        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e67e22; border-radius: 8px;">
-          <div style="background-color: #e67e22; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="color: white; margin: 0;">Verificación de Cuenta</h1>
-          </div>
-          <div style="padding: 30px;">
-            <p style="font-size: 16px;">Hola,</p>
-            <p style="font-size: 16px;">Para completar tu registro, por favor utiliza el siguiente código de verificación:</p>
-            
-            <div style="background-color: #f9f9f9; border-left: 4px solid #e67e22; padding: 15px; margin: 20px 0;">
-              <h2 style="color: #e67e22; margin: 0; text-align: center; letter-spacing: 3px;">${code}</h2>
-            </div>
-            
-            <p style="font-size: 14px; color: #777;">Este código expirará en 15 minutos. Si no solicitaste este registro, por favor ignora este mensaje.</p>
-            
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-              <p style="font-size: 12px; color: #999;">© ${new Date().getFullYear()} Paella Giobel. Todos los derechos reservados.</p>
-            </div>
-          </div>
-        </div>
-      `,
-      text: `Tu código de verificación es: ${code}\n\nExpira en 15 minutos.`
-    };
-
-    // Envío robusto con manejo de errores
-    await transporter.sendMail(mailOptions);
+    // Generar código de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     
-    return res.json({ 
-      success: true,
-      message: "Código enviado al correo electrónico"
+    // Guardar código por 10 minutos
+    verificationCodes.set(email, {
+      code,
+      expires: Date.now() + 10 * 60 * 1000 // 10 minutos
     });
-   } catch (error) {
-    console.error('Error en send-verification:', error);
-    return res.status(500).json({ 
-      error: "Error al enviar el código de verificación",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+
+    // Configurar Nodemailer con Gmail
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER, // paellagiobel@gmail.com
+        pass: process.env.EMAIL_PASS  // App Password de 16 caracteres
+      }
+    });
+
+    // Enviar email
+    await transporter.sendMail({
+      from: '"Paella Giobel" <paellagiobel@gmail.com>',
+      to: email,
+      subject: '🔐 Código de Verificación - Paella Giobel',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+          <h2 style="color: #a0522d;">Paella Giobel</h2>
+          <p>Tu código de verificación es:</p>
+          <div style="background: #f4f4f4; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; color: #a0522d; letter-spacing: 5px;">
+            ${code}
+          </div>
+          <p>Este código expira en 10 minutos.</p>
+          <p><small>Si no solicitaste este código, ignora este mensaje.</small></p>
+        </div>
+      `
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Código enviado a tu email' 
+    });
+
+  } catch (error) {
+    console.error('Error enviando código:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error enviando código de verificación' 
     });
   }
 });
+
 // Endpoint para verificar código
 router.post('/verify-code', async (req, res) => {
   try {
@@ -156,69 +145,78 @@ router.post('/verify-code', async (req, res) => {
 // Endpoint para verificar código
 router.post('/verify-and-register', async (req, res) => {
   try {
-    const { email, code, userData } = req.body;
+    const { nombre, email, password, code } = req.body;
 
-    // Buscar el código en la base de datos
-    const record = await VerificationCode.findOne({
-      where: { email },
-      order: [['createdAt', 'DESC']]
-    });
-
-    // Validaciones robustas
-    if (!record) {
-      return res.status(400).json({ error: "No se encontró solicitud de verificación" });
+    // Verificar código
+    const storedCode = verificationCodes.get(email);
+    
+    if (!storedCode) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Código no encontrado o expirado' 
+      });
     }
 
-    if (record.expiresAt < new Date()) {
-      return res.status(400).json({ error: "El código ha expirado" });
+    if (Date.now() > storedCode.expires) {
+      verificationCodes.delete(email);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Código expirado' 
+      });
     }
 
-    if (record.attempts >= 3) {
-      return res.status(400).json({ error: "Demasiados intentos fallidos" });
+    if (storedCode.code !== code) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Código incorrecto' 
+      });
     }
 
-    if (record.code !== code) {
-      await record.increment('attempts');
-      return res.status(400).json({ error: "Código incorrecto" });
-    }
-
-    // Registrar al usuario
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const newUser = await User.create({
-      ...userData,
+    // Código correcto - Crear usuario
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const user = await User.create({
+      nombre,
+      email,
       password: hashedPassword,
-      emailVerified: true
+      auth_method: 'email',
+      profile_complete: true,
+      email_verified: true
     });
 
-    // Eliminar el código usado
-    await record.destroy();
+    // Limpiar código usado
+    verificationCodes.delete(email);
 
     // Generar token JWT
     const token = jwt.sign(
-      { id: newUser.id, email: newUser.email },
+      { 
+        id: user.id, 
+        email: user.email,
+        nombre: user.nombre
+      },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     );
 
     res.json({
       success: true,
+      message: 'Registro completado exitosamente',
       token,
       user: {
-        id: newUser.id,
-        nombre: newUser.nombre,
-        email: newUser.email
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email
       }
     });
 
   } catch (error) {
-    console.error('Error en verify-and-register:', error);
+    console.error('Error en registro:', error);
     res.status(500).json({ 
-      error: "Error en el registro",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      success: false, 
+      error: 'Error completando registro' 
     });
   }
 });
-
 
 router.post('/register', async (req, res) => {
     try {

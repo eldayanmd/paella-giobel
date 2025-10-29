@@ -460,11 +460,38 @@ document.getElementById('verification-form').addEventListener('submit', async (e
   
   console.log('🔄 Iniciando verificación...', { email, code });
   
-  // Mostrar estado de carga
+  // ✅ VERIFICAR QUE EL CÓDIGO ESTÉ COMPLETO (6 DÍGITOS)
+  if (code.length !== 6) {
+    console.log('❌ Código incompleto:', code.length, 'dígitos');
+    
+    // Mostrar mensaje de error
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert error';
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Código incompleto. Ingresa los 6 dígitos.`;
+    
+    const form = document.getElementById('verification-form');
+    // Remover errores anteriores
+    const existingError = form.querySelector('.alert.error');
+    if (existingError) existingError.remove();
+    
+    form.insertBefore(errorDiv, form.firstChild);
+    return;
+  }
+  
+  // ✅ PREVENIR MÚLTIPLES ENVÍOS
   const submitBtn = e.target.querySelector('button[type="submit"]');
+  if (submitBtn.disabled) {
+    console.log('⚠️ Verificación ya en progreso...');
+    return;
+  }
+  
+  // Mostrar estado de carga
   const originalText = submitBtn.innerHTML;
   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
   submitBtn.disabled = true;
+
+  // Variable para controlar si fue exitoso
+  let verificationSuccess = false;
 
   try {
     console.log('📤 Enviando solicitud de verificación...');
@@ -485,6 +512,7 @@ document.getElementById('verification-form').addEventListener('submit', async (e
     }
 
     console.log('✅ Código verificado, procediendo con registro...');
+    verificationSuccess = true;
     
     // Si el código es correcto, proceder con el registro
     completeRegistration(email);
@@ -498,21 +526,82 @@ document.getElementById('verification-form').addEventListener('submit', async (e
     errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
     
     const form = document.getElementById('verification-form');
+    // Remover errores anteriores
+    const existingError = form.querySelector('.alert.error');
+    if (existingError) existingError.remove();
+    
     form.insertBefore(errorDiv, form.firstChild);
     
-    // Resetear inputs
-    document.querySelectorAll('.code-input').forEach(input => {
-      input.value = '';
-      input.style.borderColor = '#ff4d4f';
-      setTimeout(() => input.style.borderColor = '#ddd', 1000);
-    });
-    document.querySelector('.code-input').focus();
+    // Resetear inputs solo si el error no es de "código ya usado"
+    if (!error.message.includes('usado') && !error.message.includes('No se encontró')) {
+      document.querySelectorAll('.code-input').forEach(input => {
+        input.value = '';
+        input.style.borderColor = '#ff4d4f';
+        setTimeout(() => input.style.borderColor = '#ddd', 1000);
+      });
+      document.querySelector('.code-input').focus();
+    }
+    
   } finally {
     console.log('🏁 Finalizando verificación...');
-    submitBtn.innerHTML = originalText;
-    submitBtn.disabled = false;
+    
+    // ✅ SOLO RE-HABILITAR SI NO FUE EXITOSO
+    if (!verificationSuccess) {
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    } else {
+      // Si fue exitoso, mantener deshabilitado y cambiar texto
+      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verificado';
+      submitBtn.style.backgroundColor = '#28a745';
+    }
   }
 });
+
+// ✅ FUNCIÓN PARA MANEJAR EL AUTO-COMPLETE DE LOS INPUTS
+function setupCodeInputs() {
+  const codeInputs = document.querySelectorAll('.code-input');
+  
+  codeInputs.forEach((input, index) => {
+    // Prevenir pegado
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasteData = e.clipboardData.getData('text');
+      if (pasteData.length === 6 && /^\d+$/.test(pasteData)) {
+        const digits = pasteData.split('');
+        codeInputs.forEach((input, i) => {
+          if (digits[i]) input.value = digits[i];
+        });
+        codeInputs[5].focus();
+      }
+    });
+    
+    // Manejar entrada de teclado
+    input.addEventListener('input', (e) => {
+      const value = e.target.value;
+      
+      // Solo permitir números
+      if (value && !/^\d$/.test(value)) {
+        e.target.value = '';
+        return;
+      }
+      
+      // Si se ingresó un dígito, mover al siguiente
+      if (value && index < codeInputs.length - 1) {
+        codeInputs[index + 1].focus();
+      }
+      
+      // Si es el último dígito y está completo, NO enviar automáticamente
+      // El usuario debe hacer clic en el botón
+    });
+    
+    // Manejar tecla borrar
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && index > 0) {
+        codeInputs[index - 1].focus();
+      }
+    });
+  });
+}
 
 // Completar registro
 function completeRegistration(email) {

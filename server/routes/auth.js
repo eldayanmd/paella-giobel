@@ -131,22 +131,19 @@ router.post('/verify-code', async (req, res) => {
     console.log('🔍 Verificando código:', { email, code });
 
     // Buscar el código en la base de datos
-    const record = await VerificationCode.findOne({
-      where: { email },
-      order: [['createdAt', 'DESC']]
-    });
+  const record = await VerificationCode.findOne({
+  where: { 
+    email,
+    used: false,
+    expiresAt: { [Op.gt]: new Date() }
+  },
+  order: [['createdAt', 'DESC']]
+});
 
-    console.log('📋 Registro encontrado:', record ? {
-      id: record.id,
-      code: record.code,
-      expiresAt: record.expiresAt,
-      attempts: record.attempts,
-      createdAt: record.createdAt
-    } : 'NO ENCONTRADO');
+    console.log('📋 Registro encontrado:', record ? 'SÍ' : 'NO');
 
     // Validaciones
     if (!record) {
-      console.log('❌ No se encontró solicitud de verificación');
       return res.status(400).json({ 
         success: false,
         error: "No se encontró solicitud de verificación" 
@@ -154,7 +151,6 @@ router.post('/verify-code', async (req, res) => {
     }
 
     if (record.expiresAt < new Date()) {
-      console.log('❌ Código expirado:', record.expiresAt);
       return res.status(400).json({ 
         success: false,
         error: "El código ha expirado" 
@@ -162,7 +158,6 @@ router.post('/verify-code', async (req, res) => {
     }
 
     if (record.attempts >= 3) {
-      console.log('❌ Demasiados intentos:', record.attempts);
       return res.status(400).json({ 
         success: false,
         error: "Demasiados intentos fallidos" 
@@ -170,7 +165,6 @@ router.post('/verify-code', async (req, res) => {
     }
 
     if (record.code !== code) {
-      console.log('❌ Código incorrecto. Esperado:', record.code, 'Recibido:', code);
       await record.increment('attempts');
       return res.status(400).json({ 
         success: false,
@@ -178,9 +172,13 @@ router.post('/verify-code', async (req, res) => {
       });
     }
 
-    // Si el código es correcto
-    console.log('✅ Código verificado correctamente');
-    await record.destroy();
+    // ✅ CAMBIO: Marcar como usado en lugar de eliminar
+    await record.update({ 
+      used: true,
+      attempts: record.attempts + 1 // Marcar como "usado"
+    });
+
+    console.log('✅ Código verificado y marcado como usado');
 
     res.json({ 
       success: true,
@@ -188,11 +186,10 @@ router.post('/verify-code', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error en verify-code:', error);
+    console.error('Error en verify-code:', error);
     res.status(500).json({ 
       success: false,
-      error: "Error al verificar el código",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: "Error al verificar el código"
     });
   }
 });

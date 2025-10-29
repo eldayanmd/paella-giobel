@@ -1,4 +1,4 @@
-// VerificationCode.js - VERSIÓN SIMPLIFICADA
+// VerificationCode.js
 module.exports = (sequelize, DataTypes) => {
   const VerificationCode = sequelize.define('VerificationCode', {
     email: {
@@ -24,12 +24,16 @@ module.exports = (sequelize, DataTypes) => {
         min: 0,
         max: 5
       }
+    },
+    used: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: 'used'
     }
   }, {
     tableName: 'verification_codes',
     timestamps: true,
     underscored: true
-    // QUITA la sección de indexes completamente
   });
 
   return VerificationCode;

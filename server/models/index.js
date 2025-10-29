@@ -42,6 +42,9 @@ db[GalleryImage.name] = GalleryImage;
 const PlatformAccount = require('./PlatformAccount')(sequelize, Sequelize.DataTypes);
 db[PlatformAccount.name] = PlatformAccount;
 
+const VerificationCode = require('./VerificationCode')(sequelize, Sequelize.DataTypes);
+db[VerificationCode.name] = VerificationCode;
+
 // Establecer asociaciones
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {

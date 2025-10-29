@@ -1,4 +1,4 @@
-// VerificationCode.js
+// VerificationCode.js - QUITA el índice único
 module.exports = (sequelize, DataTypes) => {
   const VerificationCode = sequelize.define('VerificationCode', {
     email: {
@@ -26,12 +26,16 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     indexes: [
-      {
-        unique: true,
-        fields: ['email']
-      },
+      // ELIMINA este índice único ↓
+      // {
+      //   unique: true,
+      //   fields: ['email']
+      // },
       {
         fields: ['expiresAt']
+      },
+      {
+        fields: ['email'] // Agrega este índice normal (no único)
       }
     ],
     timestamps: true

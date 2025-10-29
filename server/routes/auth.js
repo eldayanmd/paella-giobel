@@ -31,24 +31,28 @@ const transporter = nodemailer.createTransport({
 
 
 router.post('/send-verification', async (req, res) => {
-  try {
+   try {
     const { email } = req.body;
     
     console.log('📧 Iniciando envío de código a:', email);
-    console.log('🔑 RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'PRESENTE' : 'AUSENTE');
 
     // Generar código de 6 dígitos
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('🔢 Código generado:', code);
     
-    // Guardar código por 10 minutos
-    verificationCodes.set(email, {
+    // Calcular expiración (10 minutos)
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Guardar en base de datos (puede haber múltiples para el mismo email)
+    await VerificationCode.create({
+      email,
       code,
-      expires: Date.now() + 10 * 60 * 1000
+      expiresAt
     });
 
-    console.log('🚀 Enviando email con Resend...');
-    
+    console.log('💾 Código guardado en base de datos para:', email);
+
+
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM,
@@ -71,21 +75,22 @@ router.post('/send-verification', async (req, res) => {
             <p>Este código expira en <strong>10 minutos</strong>.</p>
             <p>Si no solicitaste este código, puedes ignorar este mensaje.</p>
           </div>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-            <p style="color: #999; font-size: 12px;">Paella Giobel - Los mejores sabores tradicionales</p>
-          </div>
         </div>
       `
     });
 
-    if (error) {
-      console.error('❌ Error de Resend:', error);
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log('✅ Email enviado exitosamente con Resend');
-    console.log('📨 ID del email:', data?.id);
+    console.log('✅ Email enviado exitosamente');
+    
+    // Limpiar códigos expirados
+    await VerificationCode.destroy({
+      where: {
+        expires_at: {
+          [Op.lt]: new Date()
+        }
+      }
+    });
 
     res.json({ 
       success: true, 
@@ -94,14 +99,13 @@ router.post('/send-verification', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error enviando código:', error);
-    
     res.status(500).json({ 
       success: false, 
-      error: 'Error enviando código de verificación',
-      details: error.message 
+      error: 'Error enviando código de verificación'
     });
   }
 });
+
 
 // Ruta temporal para probar email
 router.get('/test-email', async (req, res) => {
@@ -133,14 +137,25 @@ router.post('/verify-code', async (req, res) => {
   try {
     const { email, code } = req.body;
 
+    console.log('🔍 Verificando código:', { email, code });
+
     // Buscar el código en la base de datos
     const record = await VerificationCode.findOne({
       where: { email },
       order: [['createdAt', 'DESC']]
     });
 
+    console.log('📋 Registro encontrado:', record ? {
+      id: record.id,
+      code: record.code,
+      expiresAt: record.expiresAt,
+      attempts: record.attempts,
+      createdAt: record.createdAt
+    } : 'NO ENCONTRADO');
+
     // Validaciones
     if (!record) {
+      console.log('❌ No se encontró solicitud de verificación');
       return res.status(400).json({ 
         success: false,
         error: "No se encontró solicitud de verificación" 
@@ -148,6 +163,7 @@ router.post('/verify-code', async (req, res) => {
     }
 
     if (record.expiresAt < new Date()) {
+      console.log('❌ Código expirado:', record.expiresAt);
       return res.status(400).json({ 
         success: false,
         error: "El código ha expirado" 
@@ -155,6 +171,7 @@ router.post('/verify-code', async (req, res) => {
     }
 
     if (record.attempts >= 3) {
+      console.log('❌ Demasiados intentos:', record.attempts);
       return res.status(400).json({ 
         success: false,
         error: "Demasiados intentos fallidos" 
@@ -162,6 +179,7 @@ router.post('/verify-code', async (req, res) => {
     }
 
     if (record.code !== code) {
+      console.log('❌ Código incorrecto. Esperado:', record.code, 'Recibido:', code);
       await record.increment('attempts');
       return res.status(400).json({ 
         success: false,
@@ -170,7 +188,8 @@ router.post('/verify-code', async (req, res) => {
     }
 
     // Si el código es correcto
-    await record.destroy(); // Eliminar el código usado
+    console.log('✅ Código verificado correctamente');
+    await record.destroy();
 
     res.json({ 
       success: true,
@@ -178,7 +197,7 @@ router.post('/verify-code', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error en verify-code:', error);
+    console.error('❌ Error en verify-code:', error);
     res.status(500).json({ 
       success: false,
       error: "Error al verificar el código",
@@ -186,7 +205,6 @@ router.post('/verify-code', async (req, res) => {
     });
   }
 });
-
 
 // Endpoint para verificar código
 router.post('/verify-and-register', async (req, res) => {

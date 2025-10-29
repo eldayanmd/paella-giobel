@@ -280,19 +280,51 @@ function setupCookies() {
     }
 }
 function setupRegistrationForm(form) {
-  console.log('🛠️ Configurando formulario de registro:', form.id);
+  console.log('🛠️ CONFIGURANDO FORMULARIO:', form.id);
+  console.log('🛠️ HTML del formulario:', form.outerHTML);
   
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // ✅ USAR LOS IDs CORRECTOS de tu HTML
-    const nombreInput = document.getElementById('register-name');
-    const emailInput = document.getElementById('register-email'); 
-    const passwordInput = document.getElementById('register-password');
+    console.log('🎯 FORMULARIO ENVIADO - BUSCANDO INPUTS...');
     
-    console.log('🔍 Buscando inputs:', {
-      nombre: nombreInput ? 'ENCONTRADO' : 'NO ENCONTRADO',
-      email: emailInput ? 'ENCONTRADO' : 'NO ENCONTRADO',
+    // Probar DIFERENTES IDs posibles
+    const posiblesIDs = {
+      nombre: ['register-name', 'nombre', 'user-name', 'name', 'full-name'],
+      email: ['register-email', 'email', 'user-email', 'user_email'],
+      password: ['register-password', 'password', 'user-password', 'user_password']
+    };
+    
+    let nombreInput, emailInput, passwordInput;
+    
+    // Buscar por diferentes IDs posibles
+    for (const id of posiblesIDs.nombre) {
+      nombreInput = document.getElementById(id);
+      if (nombreInput) {
+        console.log('✅ Nombre encontrado con ID:', id);
+        break;
+      }
+    }
+    
+    for (const id of posiblesIDs.email) {
+      emailInput = document.getElementById(id);
+      if (emailInput) {
+        console.log('✅ Email encontrado con ID:', id);
+        break;
+      }
+    }
+    
+    for (const id of posiblesIDs.password) {
+      passwordInput = document.getElementById(id);
+      if (passwordInput) {
+        console.log('✅ Password encontrado con ID:', id);
+        break;
+      }
+    }
+    
+    console.log('🔍 RESULTADO BÚSQUEDA:', {
+      nombre: nombreInput ? `ENCONTRADO: ${nombreInput.value}` : 'NO ENCONTRADO',
+      email: emailInput ? `ENCONTRADO: ${emailInput.value}` : 'NO ENCONTRADO',
       password: passwordInput ? 'ENCONTRADO' : 'NO ENCONTRADO'
     });
     
@@ -302,25 +334,20 @@ function setupRegistrationForm(form) {
       password: passwordInput?.value
     };
     
-    console.log('📝 Datos capturados del formulario:', userData);
+    console.log('📝 DATOS FINALES A ENVIAR:', userData);
     
-    // Validaciones básicas
+    // Si no se encontraron todos los campos, mostrar error
     if (!userData.nombre || !userData.email || !userData.password) {
-      showError('Todos los campos son obligatorios');
+      console.error('❌ FALTAN CAMPOS:', {
+        nombre: !userData.nombre,
+        email: !userData.email,
+        password: !userData.password
+      });
+      showError('No se pudieron capturar todos los datos del formulario');
       return;
     }
     
-    if (userData.password.length < 6) {
-      showError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-    
-    if (!isValidEmail(userData.email)) {
-      showError('Ingresa un email válido');
-      return;
-    }
-    
-    // Mostrar loading
+    // Resto del código igual...
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
@@ -697,15 +724,20 @@ function completeRegistration(email) {
   console.log('✅ Flujo de registro continuado');
 }
 
+
 async function sendVerificationCode(userData) {
   try {
-    console.log('📤 Enviando datos al backend:', userData);
-    console.log('📤 Contenido de userData:', {
+    console.log('📤 ENVIANDO DATOS AL BACKEND - COMPLETO:');
+    console.log('📤 userData objeto:', userData);
+    console.log('📤 userData propiedades:', {
       nombre: userData.nombre,
       email: userData.email,
-      password: userData.password ? 'PRESENTE' : 'AUSENTE',
-      passwordLength: userData.password?.length
+      password: userData.password,
+      tieneNombre: !!userData.nombre,
+      tieneEmail: !!userData.email,
+      tienePassword: !!userData.password
     });
+    console.log('📤 JSON que se enviará:', JSON.stringify(userData));
     
     const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
       method: 'POST',
@@ -719,37 +751,6 @@ async function sendVerificationCode(userData) {
     return result;
   } catch (error) {
     console.error('❌ Error enviando código:', error);
-    return { success: false, error: 'Error de conexión' };
-  }
-}
-async function sendVerificationCode(email) {
-  try {
-    console.log('📧 Enviando código a:', email);
-    
-    // Timeout de 15 segundos
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    
-    const result = await response.json();
-    console.log('📧 Respuesta del servidor:', result);
-    
-    return result;
-  } catch (error) {
-    console.error('❌ Error enviando código:', error);
-    
-    if (error.name === 'AbortError') {
-      return { success: false, error: 'Timeout: El servidor tardó demasiado en responder' };
-    }
-    
     return { success: false, error: 'Error de conexión' };
   }
 }

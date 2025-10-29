@@ -458,28 +458,40 @@ document.getElementById('verification-form').addEventListener('submit', async (e
     .map(input => input.value)
     .join('');
   
+  console.log('🔄 Iniciando verificación...', { email, code });
+  
   // Mostrar estado de carga
   const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
   submitBtn.disabled = true;
 
   try {
+    console.log('📤 Enviando solicitud de verificación...');
+    
     const response = await fetch(`${BASE_URL}/api/auth/verify-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code })
     });
     
+    console.log('📥 Respuesta recibida, status:', response.status);
+    
     const data = await response.json();
+    console.log('📋 Datos de respuesta:', data);
     
     if (!response.ok) {
       throw new Error(data.error || 'Código inválido');
     }
 
+    console.log('✅ Código verificado, procediendo con registro...');
+    
     // Si el código es correcto, proceder con el registro
     completeRegistration(email);
     
   } catch (error) {
+    console.error('❌ Error en verificación:', error);
+    
     // Mostrar mensaje de error
     const errorDiv = document.createElement('div');
     errorDiv.className = 'alert error';
@@ -496,36 +508,38 @@ document.getElementById('verification-form').addEventListener('submit', async (e
     });
     document.querySelector('.code-input').focus();
   } finally {
-    submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verificar';
+    console.log('🏁 Finalizando verificación...');
+    submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
   }
 });
 
 // Completar registro
-async function completeRegistration(email) {
-  const nombre = document.getElementById('nombre').value;
-  const password = document.getElementById('register-password').value;
+function completeRegistration(email) {
+  console.log('🚀 Iniciando registro completo para:', email);
   
-  try {
-    const response = await fetch(`${BASE_URL}/api/auth/register`, {
-  method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) throw new Error(data.error || 'Error en el registro');
-    
-    document.querySelector('#modal-registro').style.display = 'none';
-    
-    // Iniciar sesión automáticamente
-    localStorage.setItem('authToken', data.token);
-    updateUserUI(data.user);
-    
-  } catch (error) {
-    alert(error.message);
+  // Ocultar modal de verificación
+  const verificationModal = document.getElementById('verification-modal');
+  if (verificationModal) {
+    verificationModal.style.display = 'none';
   }
+  
+  // Mostrar formulario de registro completo
+  const registerForm = document.getElementById('register-form');
+  if (registerForm) {
+    registerForm.style.display = 'block';
+    // Pre-llenar el email si existe un campo
+    const emailField = registerForm.querySelector('input[type="email"]');
+    if (emailField) {
+      emailField.value = email;
+      emailField.readOnly = true;
+    }
+  }
+  
+  // O si el registro se completa automáticamente, mostrar mensaje de éxito
+  showSuccess('✅ Código verificado correctamente. Ahora completa tu registro.');
+  
+  console.log('✅ Flujo de registro continuado');
 }
 async function sendVerificationCode(email) {
   try {

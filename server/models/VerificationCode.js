@@ -1,4 +1,4 @@
-// VerificationCode.js
+// VerificationCode.js - VERSIÓN SIMPLIFICADA
 module.exports = (sequelize, DataTypes) => {
   const VerificationCode = sequelize.define('VerificationCode', {
     email: {
@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     expiresAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      field: 'expires_at' // ← AGREGA ESTO para mapear a snake_case
+      field: 'expires_at'
     },
     attempts: {
       type: DataTypes.INTEGER,
@@ -26,17 +26,10 @@ module.exports = (sequelize, DataTypes) => {
       }
     }
   }, {
-    tableName: 'verification_codes', // ← Asegúrate de tener esto
-    indexes: [
-      {
-        fields: ['expires_at'] // ← Usa snake_case aquí también
-      },
-      {
-        fields: ['email']
-      }
-    ],
+    tableName: 'verification_codes',
     timestamps: true,
-    underscored: true // ← AGREGA ESTO para usar snake_case automáticamente
+    underscored: true
+    // QUITA la sección de indexes completamente
   });
 
   return VerificationCode;

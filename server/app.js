@@ -235,7 +235,7 @@ async function initializeDatabase() {
     }
 
     // Sincronizar modelos con la base de datos
-    await sequelize.sync({ force: false }); 
+    await sequelize.sync({ force: false , alter: false}); 
     console.log('🔄 Modelos sincronizados');
     
     const PORT = process.env.PORT || 5500;

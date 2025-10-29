@@ -282,23 +282,17 @@ function setupCookies() {
 function setupRegistrationForm(form) {
   console.log('🛠️ CONFIGURANDO FORMULARIO DE REGISTRO:', form.id);
   
-  // Prevenir múltiples event listeners
-  if (form._listenerAdded) {
-    console.log('✅ Listener ya agregado, evitando duplicado');
-    return;
-  }
+  // Remover event listeners anteriores para evitar duplicados
+  const newForm = form.cloneNode(true);
+  form.parentNode.replaceChild(newForm, form);
   
-  form.addEventListener('submit', async (e) => {
+  const freshForm = document.getElementById('form-registro');
+  
+  freshForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    e.stopImmediatePropagation(); // Prevenir otros listeners
     
     console.log('🎯 FORMULARIO ENVIADO - INICIANDO');
-    
-    // Deshabilitar el formulario temporalmente para prevenir envíos dobles
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if (submitBtn.disabled) {
-      console.log('⚠️ Formulario ya en proceso, ignorando...');
-      return;
-    }
     
     // Capturar datos
     const userData = {
@@ -309,23 +303,19 @@ function setupRegistrationForm(form) {
     
     console.log('📝 DATOS CAPTURADOS:', userData);
     
-    // ✅ VALIDACIÓN CLARA
+    // ✅ VALIDACIÓN
     if (!userData.nombre || !userData.email || !userData.password) {
-      console.error('❌ FALTAN CAMPOS:', {
-        nombre: !userData.nombre,
-        email: !userData.email,
-        password: !userData.password
-      });
+      console.error('❌ FALTAN CAMPOS');
       showError('Por favor completa todos los campos: nombre, email y contraseña');
       return;
     }
     
-    // Validar contraseña
     if (userData.password.length < 6) {
       showError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
     
+    const submitBtn = freshForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
     submitBtn.disabled = true;
@@ -338,7 +328,7 @@ function setupRegistrationForm(form) {
       if (result.success) {
         console.log('✅ Código enviado, mostrando modal de verificación');
         showVerificationModal(userData.email);
-        form.reset();
+        freshForm.reset();
       } else {
         showError(result.error);
       }
@@ -350,8 +340,6 @@ function setupRegistrationForm(form) {
       submitBtn.disabled = false;
     }
   });
-  
-  form._listenerAdded = true; // Marcar como configurado
 }
 function showVerificationModal(email) {
   console.log('📧 Mostrando modal de verificación para:', email);
@@ -447,54 +435,7 @@ async function registerUser(userData) {
 }
 // Modifica el manejador del formulario para usar manualJWTDecode
 
-document.getElementById('form-registro').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('email').value;
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  const responseDiv = document.getElementById('response-message');
-  
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
-  submitBtn.disabled = true;
-  
-  try {
-    const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
-  method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Error enviando código');
-    }
-    
-    // Mostrar paso 2
-    document.getElementById('register-step1').style.display = 'none';
-    document.getElementById('register-step2').style.display = 'block';
-    document.getElementById('user-email').textContent = email;
-    
-    // Iniciar countdown
-    startCountdown(15 * 60);
-    
-    // Configurar inputs de código
-    setupCodeInputs();
-    
-  } catch (error) {
-    responseDiv.style.display = 'block';
-    responseDiv.innerHTML = `
-      <div class="error-message">
-        <i class="fas fa-exclamation-circle"></i>
-        <p>${error.message}</p>
-      </div>
-    `;
-    responseDiv.className = 'error';
-  } finally {
-    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar código';
-    submitBtn.disabled = false;
-  }
-});
+
 function setupCodeInputs() {
   const inputs = document.querySelectorAll('.code-input');
   

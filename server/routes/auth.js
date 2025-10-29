@@ -10,6 +10,7 @@ require('dotenv').config();
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const verificationCodes = new Map();
+const { Op } = require('sequelize'); // ← AGREGA ESTA LÍNEA
 
 console.log('User model imported correctly?', User !== undefined);
 

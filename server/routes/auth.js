@@ -33,14 +33,13 @@ const transporter = nodemailer.createTransport({
 
 router.post('/send-verification', async (req, res) => {
   try {
-    const { email, nombre, password } = req.body; // ← Recibir TODOS los datos
+    const { email, nombre, password } = req.body;
     
     console.log('📧 Iniciando envío de código a:', email);
     
-    // ✅ VERIFICAR SI EL EMAIL YA EXISTE
+    // Verificar si el email ya existe
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      console.log('❌ Email ya registrado:', email);
       return res.status(400).json({
         success: false,
         error: 'Este email ya está registrado. ¿Quieres iniciar sesión?'
@@ -48,36 +47,33 @@ router.post('/send-verification', async (req, res) => {
     }
     
     // Validar contraseña
-    if (password && password.length < 6) {
+    if (password.length < 6) {
       return res.status(400).json({
         success: false,
         error: 'La contraseña debe tener al menos 6 caracteres'
       });
     }
     
-    // Generar código de 6 dígitos
+    // Generar código
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('🔢 Código generado:', code);
-    
-    // Calcular expiración (10 minutos)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Guardar datos temporales en la base de datos
+    // ✅ GUARDAR EN BASE DE DATOS CON user_data
     await VerificationCode.create({
       email,
       code,
       expiresAt,
       attempts: 0,
-      userData: JSON.stringify({ // ← Guardar todos los datos del usuario
+      userData: JSON.stringify({
         nombre,
         password,
         email
       })
     });
 
-    console.log('💾 Datos temporales guardados para:', email);
+    console.log('💾 Código y datos guardados en BD para:', email);
 
-    // Enviar email con Resend
+    // Enviar email...
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM,
       to: email,

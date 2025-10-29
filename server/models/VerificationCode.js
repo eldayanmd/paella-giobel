@@ -1,4 +1,4 @@
-// VerificationCode.js
+// VerificationCode.js - VERSIÓN CORRECTA
 module.exports = (sequelize, DataTypes) => {
   const VerificationCode = sequelize.define('VerificationCode', {
     email: {
@@ -26,8 +26,9 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     userData: {
-      type: DataTypes.TEXT, // ← NUEVO CAMPO para guardar datos del usuario
-      allowNull: true
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'user_data' // Mapea a la columna user_data en la base de datos
     }
   }, {
     tableName: 'verification_codes',

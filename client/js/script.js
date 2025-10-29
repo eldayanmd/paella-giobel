@@ -280,80 +280,47 @@ function setupCookies() {
     }
 }
 function setupRegistrationForm(form) {
-  console.log('🛠️ CONFIGURANDO FORMULARIO:', form.id);
-  console.log('🛠️ HTML del formulario:', form.outerHTML);
+  console.log('🛠️ CONFIGURANDO FORMULARIO DE REGISTRO:', form.id);
   
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    console.log('🎯 FORMULARIO ENVIADO - BUSCANDO INPUTS...');
+    console.log('🎯 FORMULARIO ENVIADO');
     
-    // Probar DIFERENTES IDs posibles
-    const posiblesIDs = {
-      nombre: ['register-name', 'nombre', 'user-name', 'name', 'full-name'],
-      email: ['register-email', 'email', 'user-email', 'user_email'],
-      password: ['register-password', 'password', 'user-password', 'user_password']
-    };
-    
-    let nombreInput, emailInput, passwordInput;
-    
-    // Buscar por diferentes IDs posibles
-    for (const id of posiblesIDs.nombre) {
-      nombreInput = document.getElementById(id);
-      if (nombreInput) {
-        console.log('✅ Nombre encontrado con ID:', id);
-        break;
-      }
-    }
-    
-    for (const id of posiblesIDs.email) {
-      emailInput = document.getElementById(id);
-      if (emailInput) {
-        console.log('✅ Email encontrado con ID:', id);
-        break;
-      }
-    }
-    
-    for (const id of posiblesIDs.password) {
-      passwordInput = document.getElementById(id);
-      if (passwordInput) {
-        console.log('✅ Password encontrado con ID:', id);
-        break;
-      }
-    }
-    
-    console.log('🔍 RESULTADO BÚSQUEDA:', {
-      nombre: nombreInput ? `ENCONTRADO: ${nombreInput.value}` : 'NO ENCONTRADO',
-      email: emailInput ? `ENCONTRADO: ${emailInput.value}` : 'NO ENCONTRADO',
-      password: passwordInput ? 'ENCONTRADO' : 'NO ENCONTRADO'
-    });
-    
+    // Capturar datos DIRECTAMENTE por ID específico
     const userData = {
-      nombre: nombreInput?.value,
-      email: emailInput?.value,
-      password: passwordInput?.value
+      nombre: document.getElementById('nombre')?.value,
+      email: document.getElementById('email')?.value,
+      password: document.getElementById('register-password')?.value
     };
     
-    console.log('📝 DATOS FINALES A ENVIAR:', userData);
+    console.log('📝 DATOS CAPTURADOS:', userData);
     
-    // Si no se encontraron todos los campos, mostrar error
+    // ✅ VALIDACIÓN CLARA
     if (!userData.nombre || !userData.email || !userData.password) {
       console.error('❌ FALTAN CAMPOS:', {
         nombre: !userData.nombre,
         email: !userData.email,
         password: !userData.password
       });
-      showError('No se pudieron capturar todos los datos del formulario');
+      showError('Por favor completa todos los campos: nombre, email y contraseña');
       return;
     }
     
-    // Resto del código igual...
+    // Validar contraseña
+    if (userData.password.length < 6) {
+      showError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
     submitBtn.disabled = true;
     
     try {
+      console.log('📤 ENVIANDO AL BACKEND:', userData);
+      
       const result = await sendVerificationCode(userData);
       
       if (result.success) {
@@ -365,12 +332,36 @@ function setupRegistrationForm(form) {
       }
     } catch (error) {
       console.error('❌ Error en registro:', error);
-      showError('Error al procesar el registro');
+      showError('Error al procesar el registro: ' + error.message);
     } finally {
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
     }
   });
+}
+function showVerificationModal(email) {
+  console.log('📧 Mostrando modal de verificación para:', email);
+  
+  // Ocultar el paso 1 y mostrar el paso 2 (verificación)
+  const step1 = document.getElementById('register-step1');
+  const step2 = document.getElementById('register-step2');
+  
+  if (step1 && step2) {
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    
+    // Actualizar el email en el modal de verificación
+    const userEmailElement = document.getElementById('user-email');
+    if (userEmailElement) {
+      userEmailElement.textContent = email;
+    }
+    
+    // Iniciar countdown
+    startCountdown(10 * 60); // 10 minutos
+    
+    // Configurar inputs de código
+    setupCodeInputs();
+  }
 }
 
 function setupPasswordValidation() {
@@ -727,31 +718,33 @@ function completeRegistration(email) {
 
 async function sendVerificationCode(userData) {
   try {
-    console.log('📤 ENVIANDO DATOS AL BACKEND - COMPLETO:');
-    console.log('📤 userData objeto:', userData);
-    console.log('📤 userData propiedades:', {
-      nombre: userData.nombre,
-      email: userData.email,
-      password: userData.password,
-      tieneNombre: !!userData.nombre,
-      tieneEmail: !!userData.email,
-      tienePassword: !!userData.password
-    });
-    console.log('📤 JSON que se enviará:', JSON.stringify(userData));
+    console.log('📤 ENVIANDO VERIFICACIÓN - Datos completos:', userData);
     
     const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(userData)
     });
     
+    console.log('📥 Respuesta del servidor - Status:', response.status);
+    
     const result = await response.json();
-    console.log('📥 Respuesta del servidor:', result);
+    console.log('📋 Datos de respuesta:', result);
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Error del servidor');
+    }
     
     return result;
   } catch (error) {
     console.error('❌ Error enviando código:', error);
-    return { success: false, error: 'Error de conexión' };
+    return { 
+      success: false, 
+      error: error.message || 'Error de conexión' 
+    };
   }
 }
 function setupGoogleAuth() {
@@ -1176,7 +1169,11 @@ function updateAverageRating(average) {
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM cargado - iniciando configuración');
-  
+  const registroForm = document.getElementById('form-registro');
+  if (registroForm) {
+    setupRegistrationForm(registroForm);
+  }
+
   // Configuración básica esencial
   setupModals();
   setupPasswordValidation();

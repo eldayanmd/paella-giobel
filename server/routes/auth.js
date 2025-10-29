@@ -485,6 +485,65 @@ router.post('/complete-profile', async (req, res) => {
         });
     }
 });
+router.post('/complete-registration', async (req, res) => {
+  try {
+    const { email, nombre, password } = req.body;
+    
+    console.log('🎯 Completando registro para:', email);
+    
+    // Verificar si el usuario ya existe
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'Este email ya está registrado'
+      });
+    }
+    
+    // Hashear contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Crear usuario
+    const user = await User.create({
+      nombre,
+      email,
+      password: hashedPassword,
+      auth_method: 'email',
+      profile_complete: true
+    });
+    
+    // Generar token JWT
+    const token = jwt.sign(
+      { 
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    console.log('✅ Usuario creado exitosamente:', user.id);
+    
+    res.json({
+      success: true,
+      message: 'Usuario registrado exitosamente',
+      token,
+      user: {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error completando registro:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error completando el registro'
+    });
+  }
+});
 
 router.get('/me', 
     passport.authenticate('jwt', { session: false }),

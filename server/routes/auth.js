@@ -7,6 +7,8 @@ const { User, VerificationCode } = require('../models');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 require('dotenv').config();
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 const verificationCodes = new Map();
 
 console.log('User model imported correctly?', User !== undefined);
@@ -33,8 +35,7 @@ router.post('/send-verification', async (req, res) => {
     const { email } = req.body;
     
     console.log('📧 Iniciando envío de código a:', email);
-    console.log('🔑 EMAIL_USER:', process.env.EMAIL_USER ? 'PRESENTE' : 'AUSENTE');
-    console.log('🔑 EMAIL_PASS:', process.env.EMAIL_PASS ? 'PRESENTE' : 'AUSENTE');
+    console.log('🔑 RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'PRESENTE' : 'AUSENTE');
 
     // Generar código de 6 dígitos
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -46,48 +47,45 @@ router.post('/send-verification', async (req, res) => {
       expires: Date.now() + 10 * 60 * 1000
     });
 
-    console.log('🚀 Configurando transporter de Nodemailer...');
+    console.log('🚀 Enviando email con Resend...');
     
-    // Configurar Nodemailer con timeout más corto para debug
-    const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true para 465, false para otros puertos
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-
-    console.log('✅ Transporter configurado, verificando conexión...');
-    
-    // Verificar conexión primero
-    await transporter.verify();
-    console.log('✅ Conexión SMTP verificada');
-
-    console.log('📤 Enviando email...');
-    
-    // Enviar email
-    const info = await transporter.sendMail({
-      from: '"Paella Giobel" <paellagiobel@gmail.com>',
+    // Enviar email con Resend
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
       to: email,
       subject: '🔐 Código de Verificación - Paella Giobel',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px;">
-          <h2 style="color: #a0522d;">Paella Giobel</h2>
-          <p>Tu código de verificación es:</p>
-          <div style="background: #f4f4f4; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; color: #a0522d; letter-spacing: 5px;">
-            ${code}
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #a0522d; margin: 0;">🍲 Paella Giobel</h2>
           </div>
-          <p>Este código expira en 10 minutos.</p>
+          
+          <div style="background: #f8f8f8; padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <p style="margin: 0 0 15px 0; font-size: 16px;">Tu código de verificación es:</p>
+            <div style="background: #ffffff; padding: 25px; text-align: center; font-size: 36px; font-weight: bold; color: #a0522d; letter-spacing: 8px; border: 2px dashed #a0522d; border-radius: 8px;">
+              ${code}
+            </div>
+          </div>
+          
+          <div style="text-align: center; color: #666; font-size: 14px;">
+            <p>Este código expira en <strong>10 minutos</strong>.</p>
+            <p>Si no solicitaste este código, puedes ignorar este mensaje.</p>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+            <p style="color: #999; font-size: 12px;">Paella Giobel - Los mejores sabores tradicionales</p>
+          </div>
         </div>
       `
     });
 
-    console.log('✅ Email enviado exitosamente:', info.messageId);
+    if (error) {
+      console.error('❌ Error de Resend:', error);
+      throw error;
+    }
+
+    console.log('✅ Email enviado exitosamente con Resend');
+    console.log('📨 ID del email:', data?.id);
 
     res.json({ 
       success: true, 
@@ -96,11 +94,6 @@ router.post('/send-verification', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error enviando código:', error);
-    console.error('❌ Detalles del error:', {
-      code: error.code,
-      command: error.command,
-      message: error.message
-    });
     
     res.status(500).json({ 
       success: false, 
@@ -109,34 +102,30 @@ router.post('/send-verification', async (req, res) => {
     });
   }
 });
+
 // Ruta temporal para probar email
 router.get('/test-email', async (req, res) => {
   try {
-    console.log('🧪 Probando configuración de email...');
+    console.log('🧪 Probando Resend...');
     
-    const testTransporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      connectionTimeout: 10000
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: 'marrerodayan82@gmail.com',
+      subject: '✅ Test Email - Paella Giobel',
+      html: '<p>Este es un email de prueba desde Resend!</p>'
     });
 
-    console.log('✅ Transporter creado, verificando...');
-    await testTransporter.verify();
-    console.log('✅ Conexión SMTP funcionando');
+    if (error) {
+      console.error('❌ Error de Resend:', error);
+      throw error;
+    }
+
+    console.log('✅ Test email enviado:', data.id);
+    res.json({ success: true, message: 'Email de prueba enviado', emailId: data.id });
     
-    res.json({ 
-      success: true, 
-      message: 'Email configurado correctamente' 
-    });
   } catch (error) {
-    console.error('❌ Error SMTP:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
+    console.error('❌ Error en test:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 // Endpoint para verificar código

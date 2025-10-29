@@ -1798,7 +1798,101 @@ function setupGoogleRegisterButton() {
     });
   }
 }
+// Buscar el formulario de registro
+const registrationForm = document.getElementById('registration-form');
 
+// Si no existe, buscar por clase o crear el event listener de otra forma
+if (!registrationForm) {
+  console.log('❌ No se encontró el formulario de registro con id="registration-form"');
+  
+  // Buscar por clase o otro selector
+  const alternativeForm = document.querySelector('form[data-type="registration"]');
+  if (alternativeForm) {
+    setupRegistrationForm(alternativeForm);
+  }
+} else {
+  setupRegistrationForm(registrationForm);
+}
+
+function setupRegistrationForm(form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const userData = {
+      nombre: document.getElementById('nombre').value,
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value
+    };
+    
+    console.log('📝 Datos del registro:', userData);
+    
+    // Validaciones básicas
+    if (!userData.nombre || !userData.email || !userData.password) {
+      showError('Todos los campos son obligatorios');
+      return;
+    }
+    
+    if (userData.password.length < 6) {
+      showError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    if (!isValidEmail(userData.email)) {
+      showError('Ingresa un email válido');
+      return;
+    }
+    
+    // Mostrar loading
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
+    submitBtn.disabled = true;
+    
+    try {
+      const result = await sendVerificationCode(userData);
+      
+      if (result.success) {
+        // Mostrar modal de verificación
+        showVerificationModal(userData.email);
+        form.reset(); // Limpiar formulario
+      } else {
+        showError(result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error en registro:', error);
+      showError('Error al procesar el registro');
+    } finally {
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+// Función para validar email
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// Función para mostrar errores
+function showError(message) {
+  // Buscar o crear contenedor de errores
+  let errorDiv = document.getElementById('registration-error');
+  if (!errorDiv) {
+    errorDiv = document.createElement('div');
+    errorDiv.id = 'registration-error';
+    errorDiv.className = 'alert error';
+    document.querySelector('#registration-form').prepend(errorDiv);
+  }
+  
+  errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+  errorDiv.style.display = 'block';
+  
+  // Ocultar después de 5 segundos
+  setTimeout(() => {
+    errorDiv.style.display = 'none';
+  }, 5000);
+}
 
 function setupRegistrationFormHandlers() {
   const form = document.getElementById('form-registro');

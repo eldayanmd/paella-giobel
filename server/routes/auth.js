@@ -35,6 +35,21 @@ router.post('/send-verification', async (req, res) => {
   try {
     const { email, nombre, password } = req.body;
     
+    console.log('📧 Datos recibidos en el backend:', {
+      email: email || 'UNDEFINED',
+      nombre: nombre || 'UNDEFINED', 
+      password: password ? 'PRESENTE' : 'UNDEFINED',
+      bodyCompleto: req.body
+    });
+    
+    // ✅ VALIDAR QUE TODOS LOS DATOS ESTÉN PRESENTES
+    if (!email || !nombre || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos incompletos. Se requieren: nombre, email y contraseña.'
+      });
+    }
+    
     console.log('📧 Iniciando envío de código a:', email);
     
     // Verificar si el email ya existe
@@ -46,7 +61,7 @@ router.post('/send-verification', async (req, res) => {
       });
     }
     
-    // Validar contraseña
+    // Validar contraseña (ahora seguro que existe)
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
@@ -58,7 +73,7 @@ router.post('/send-verification', async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // ✅ GUARDAR EN BASE DE DATOS CON user_data
+    // Guardar en base de datos con user_data
     await VerificationCode.create({
       email,
       code,
@@ -116,7 +131,6 @@ router.post('/send-verification', async (req, res) => {
     });
   }
 });
-
 // Ruta temporal para probar email
 router.get('/test-email', async (req, res) => {
   try {

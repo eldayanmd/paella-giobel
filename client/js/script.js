@@ -279,6 +279,72 @@ function setupCookies() {
         });
     }
 }
+function setupRegistrationForm(form) {
+  console.log('🛠️ Configurando formulario de registro:', form.id);
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // ✅ USAR LOS IDs CORRECTOS de tu HTML
+    const nombreInput = document.getElementById('register-name');
+    const emailInput = document.getElementById('register-email'); 
+    const passwordInput = document.getElementById('register-password');
+    
+    console.log('🔍 Buscando inputs:', {
+      nombre: nombreInput ? 'ENCONTRADO' : 'NO ENCONTRADO',
+      email: emailInput ? 'ENCONTRADO' : 'NO ENCONTRADO',
+      password: passwordInput ? 'ENCONTRADO' : 'NO ENCONTRADO'
+    });
+    
+    const userData = {
+      nombre: nombreInput?.value,
+      email: emailInput?.value,
+      password: passwordInput?.value
+    };
+    
+    console.log('📝 Datos capturados del formulario:', userData);
+    
+    // Validaciones básicas
+    if (!userData.nombre || !userData.email || !userData.password) {
+      showError('Todos los campos son obligatorios');
+      return;
+    }
+    
+    if (userData.password.length < 6) {
+      showError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    if (!isValidEmail(userData.email)) {
+      showError('Ingresa un email válido');
+      return;
+    }
+    
+    // Mostrar loading
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
+    submitBtn.disabled = true;
+    
+    try {
+      const result = await sendVerificationCode(userData);
+      
+      if (result.success) {
+        console.log('✅ Código enviado, mostrando modal de verificación');
+        showVerificationModal(userData.email);
+        form.reset();
+      } else {
+        showError(result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error en registro:', error);
+      showError('Error al procesar el registro');
+    } finally {
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }
+  });
+}
 
 function setupPasswordValidation() {
     const passwordInput = document.getElementById('register-password');
@@ -629,6 +695,32 @@ function completeRegistration(email) {
   showSuccess('✅ Código verificado correctamente. Ahora completa tu registro.');
   
   console.log('✅ Flujo de registro continuado');
+}
+
+async function sendVerificationCode(userData) {
+  try {
+    console.log('📤 Enviando datos al backend:', userData);
+    console.log('📤 Contenido de userData:', {
+      nombre: userData.nombre,
+      email: userData.email,
+      password: userData.password ? 'PRESENTE' : 'AUSENTE',
+      passwordLength: userData.password?.length
+    });
+    
+    const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    
+    const result = await response.json();
+    console.log('📥 Respuesta del servidor:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error enviando código:', error);
+    return { success: false, error: 'Error de conexión' };
+  }
 }
 async function sendVerificationCode(email) {
   try {

@@ -1,4 +1,4 @@
-// VerificationCode.js - QUITA el índice único
+// VerificationCode.js
 module.exports = (sequelize, DataTypes) => {
   const VerificationCode = sequelize.define('VerificationCode', {
     email: {
@@ -14,7 +14,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     expiresAt: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: false,
+      field: 'expires_at' // ← AGREGA ESTO para mapear a snake_case
     },
     attempts: {
       type: DataTypes.INTEGER,
@@ -25,20 +26,17 @@ module.exports = (sequelize, DataTypes) => {
       }
     }
   }, {
+    tableName: 'verification_codes', // ← Asegúrate de tener esto
     indexes: [
-      // ELIMINA este índice único ↓
-      // {
-      //   unique: true,
-      //   fields: ['email']
-      // },
       {
-        fields: ['expiresAt']
+        fields: ['expires_at'] // ← Usa snake_case aquí también
       },
       {
-        fields: ['email'] // Agrega este índice normal (no único)
+        fields: ['email']
       }
     ],
-    timestamps: true
+    timestamps: true,
+    underscored: true // ← AGREGA ESTO para usar snake_case automáticamente
   });
 
   return VerificationCode;

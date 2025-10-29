@@ -32,7 +32,7 @@ const transporter = nodemailer.createTransport({
 
 
 router.post('/send-verification', async (req, res) => {
-   try {
+  try {
     const { email } = req.body;
     
     console.log('📧 Iniciando envío de código a:', email);
@@ -44,7 +44,7 @@ router.post('/send-verification', async (req, res) => {
     // Calcular expiración (10 minutos)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Guardar en base de datos (puede haber múltiples para el mismo email)
+    // Guardar en base de datos
     await VerificationCode.create({
       email,
       code,
@@ -52,7 +52,6 @@ router.post('/send-verification', async (req, res) => {
     });
 
     console.log('💾 Código guardado en base de datos para:', email);
-
 
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
@@ -83,15 +82,6 @@ router.post('/send-verification', async (req, res) => {
     if (error) throw error;
 
     console.log('✅ Email enviado exitosamente');
-    
-    // Limpiar códigos expirados
-    await VerificationCode.destroy({
-      where: {
-        expires_at: {
-          [Op.lt]: new Date()
-        }
-      }
-    });
 
     res.json({ 
       success: true, 

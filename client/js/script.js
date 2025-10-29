@@ -613,159 +613,39 @@ function completeRegistration(email) {
     verificationModal.style.display = 'none';
   }
   
-  // Mostrar formulario de registro completo (nombre, contraseña)
-  showRegistrationForm(email);
-}
-
-function showRegistrationForm(email) {
-  console.log('📝 Mostrando formulario de registro para:', email);
-  
-  // Crear o mostrar el formulario de registro completo
-  let registerForm = document.getElementById('complete-registration-form');
-  
-  if (!registerForm) {
-    registerForm = document.createElement('div');
-    registerForm.id = 'complete-registration-form';
-    registerForm.className = 'modal';
-    registerForm.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Completa tu Registro</h2>
-          <p>Último paso: crea tu cuenta</p>
-        </div>
-        <form id="final-registration-form">
-          <input type="hidden" id="verified-email" value="${email}">
-          
-          <div class="form-group">
-            <label for="user-name">Nombre completo</label>
-            <input type="text" id="user-name" required placeholder="Tu nombre completo">
-          </div>
-          
-          <div class="form-group">
-            <label for="user-password">Contraseña</label>
-            <input type="password" id="user-password" required placeholder="Crea una contraseña segura" minlength="6">
-          </div>
-          
-          <div class="form-group">
-            <label for="confirm-password">Confirmar contraseña</label>
-            <input type="password" id="confirm-password" required placeholder="Repite tu contraseña" minlength="6">
-          </div>
-          
-          <div id="registration-response"></div>
-          
-          <div class="form-actions">
-            <button type="submit" class="btn-primary">
-              <i class="fas fa-user-plus"></i> Crear Cuenta
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
-    document.body.appendChild(registerForm);
+  // Mostrar formulario de registro completo
+  const registerForm = document.getElementById('register-form');
+  if (registerForm) {
+    registerForm.style.display = 'block';
+    // Pre-llenar el email si existe un campo
+    const emailField = registerForm.querySelector('input[type="email"]');
+    if (emailField) {
+      emailField.value = email;
+      emailField.readOnly = true;
+    }
   }
   
-  registerForm.style.display = 'block';
+  // O si el registro se completa automáticamente, mostrar mensaje de éxito
+  showSuccess('✅ Código verificado correctamente. Ahora completa tu registro.');
   
-  // Configurar el formulario final
-  setupFinalRegistrationForm();
+  console.log('✅ Flujo de registro continuado');
 }
-
-function setupFinalRegistrationForm() {
-  const form = document.getElementById('final-registration-form');
-  if (!form) return;
-  
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const email = document.getElementById('verified-email').value;
-    const nombre = document.getElementById('user-name').value;
-    const password = document.getElementById('user-password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-    
-    // Validaciones
-    if (password !== confirmPassword) {
-      showRegistrationError('Las contraseñas no coinciden');
-      return;
-    }
-    
-    if (password.length < 6) {
-      showRegistrationError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-    
-    console.log('🎯 Completando registro final:', { email, nombre });
-    
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando cuenta...';
-    submitBtn.disabled = true;
-    
-    try {
-      // Llamar al backend para crear el usuario final
-      const response = await fetch(`${BASE_URL}/api/auth/complete-registration`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, nombre, password })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Error creando la cuenta');
-      }
-      
-      console.log('✅ Usuario creado exitosamente:', data);
-      
-      // Guardar token y redirigir
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userName', data.user.nombre);
-        
-        // Cerrar modal
-        const registerForm = document.getElementById('complete-registration-form');
-        if (registerForm) {
-          registerForm.style.display = 'none';
-        }
-        
-        // Mostrar mensaje de éxito
-        showSuccess(`¡Bienvenido ${data.user.nombre}! Tu cuenta ha sido creada.`);
-        
-        // Recargar la página para actualizar el estado de autenticación
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error completando registro:', error);
-      showRegistrationError(error.message);
-    } finally {
-      submitBtn.innerHTML = originalText;
-      submitBtn.disabled = false;
-    }
-  });
-}
-
-function showRegistrationError(message) {
-  const responseDiv = document.getElementById('registration-response');
-  if (responseDiv) {
-    responseDiv.innerHTML = `
-      <div class="alert error">
-        <i class="fas fa-exclamation-circle"></i> ${message}
-      </div>
-    `;
-  }
-}
-// Función para enviar código (con todos los datos)
-async function sendVerificationCode(userData) {
+async function sendVerificationCode(email) {
   try {
-    console.log('📧 Enviando código con datos:', userData);
+    console.log('📧 Enviando código a:', email);
     
+    // Timeout de 15 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData) // ← Enviar TODOS los datos
+      body: JSON.stringify({ email }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
     
     const result = await response.json();
     console.log('📧 Respuesta del servidor:', result);
@@ -773,35 +653,14 @@ async function sendVerificationCode(userData) {
     return result;
   } catch (error) {
     console.error('❌ Error enviando código:', error);
+    
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Timeout: El servidor tardó demasiado en responder' };
+    }
+    
     return { success: false, error: 'Error de conexión' };
   }
 }
-
-// En tu formulario de registro, enviar TODOS los datos
-registrationForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const userData = {
-    nombre: document.getElementById('nombre').value,
-    email: document.getElementById('email').value,
-    password: document.getElementById('password').value
-  };
-  
-  // Validaciones básicas
-  if (userData.password.length < 6) {
-    showError('La contraseña debe tener al menos 6 caracteres');
-    return;
-  }
-  
-  const result = await sendVerificationCode(userData);
-  
-  if (result.success) {
-    // Mostrar modal de verificación
-    showVerificationModal(userData.email);
-  } else {
-    showError(result.error);
-  }
-});
 function setupGoogleAuth() {
   document.querySelectorAll('.btn-social.google').forEach(btn => {
     btn.addEventListener('click', function(e) {
@@ -1798,101 +1657,7 @@ function setupGoogleRegisterButton() {
     });
   }
 }
-// Buscar el formulario de registro
-const registrationForm = document.getElementById('registration-form');
 
-// Si no existe, buscar por clase o crear el event listener de otra forma
-if (!registrationForm) {
-  console.log('❌ No se encontró el formulario de registro con id="registration-form"');
-  
-  // Buscar por clase o otro selector
-  const alternativeForm = document.querySelector('form[data-type="registration"]');
-  if (alternativeForm) {
-    setupRegistrationForm(alternativeForm);
-  }
-} else {
-  setupRegistrationForm(registrationForm);
-}
-
-function setupRegistrationForm(form) {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const userData = {
-      nombre: document.getElementById('nombre').value,
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value
-    };
-    
-    console.log('📝 Datos del registro:', userData);
-    
-    // Validaciones básicas
-    if (!userData.nombre || !userData.email || !userData.password) {
-      showError('Todos los campos son obligatorios');
-      return;
-    }
-    
-    if (userData.password.length < 6) {
-      showError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-    
-    if (!isValidEmail(userData.email)) {
-      showError('Ingresa un email válido');
-      return;
-    }
-    
-    // Mostrar loading
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
-    submitBtn.disabled = true;
-    
-    try {
-      const result = await sendVerificationCode(userData);
-      
-      if (result.success) {
-        // Mostrar modal de verificación
-        showVerificationModal(userData.email);
-        form.reset(); // Limpiar formulario
-      } else {
-        showError(result.error);
-      }
-    } catch (error) {
-      console.error('❌ Error en registro:', error);
-      showError('Error al procesar el registro');
-    } finally {
-      submitBtn.innerHTML = originalText;
-      submitBtn.disabled = false;
-    }
-  });
-}
-
-// Función para validar email
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-// Función para mostrar errores
-function showError(message) {
-  // Buscar o crear contenedor de errores
-  let errorDiv = document.getElementById('registration-error');
-  if (!errorDiv) {
-    errorDiv = document.createElement('div');
-    errorDiv.id = 'registration-error';
-    errorDiv.className = 'alert error';
-    document.querySelector('#registration-form').prepend(errorDiv);
-  }
-  
-  errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-  errorDiv.style.display = 'block';
-  
-  // Ocultar después de 5 segundos
-  setTimeout(() => {
-    errorDiv.style.display = 'none';
-  }, 5000);
-}
 
 function setupRegistrationFormHandlers() {
   const form = document.getElementById('form-registro');

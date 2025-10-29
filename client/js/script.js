@@ -282,12 +282,25 @@ function setupCookies() {
 function setupRegistrationForm(form) {
   console.log('🛠️ CONFIGURANDO FORMULARIO DE REGISTRO:', form.id);
   
+  // Prevenir múltiples event listeners
+  if (form._listenerAdded) {
+    console.log('✅ Listener ya agregado, evitando duplicado');
+    return;
+  }
+  
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    console.log('🎯 FORMULARIO ENVIADO');
+    console.log('🎯 FORMULARIO ENVIADO - INICIANDO');
     
-    // Capturar datos DIRECTAMENTE por ID específico
+    // Deshabilitar el formulario temporalmente para prevenir envíos dobles
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) {
+      console.log('⚠️ Formulario ya en proceso, ignorando...');
+      return;
+    }
+    
+    // Capturar datos
     const userData = {
       nombre: document.getElementById('nombre')?.value,
       email: document.getElementById('email')?.value,
@@ -313,13 +326,12 @@ function setupRegistrationForm(form) {
       return;
     }
     
-    const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando código...';
     submitBtn.disabled = true;
     
     try {
-      console.log('📤 ENVIANDO AL BACKEND:', userData);
+      console.log('📤 ENVIANDO AL BACKEND - ÚNICA LLAMADA');
       
       const result = await sendVerificationCode(userData);
       
@@ -338,6 +350,8 @@ function setupRegistrationForm(form) {
       submitBtn.disabled = false;
     }
   });
+  
+  form._listenerAdded = true; // Marcar como configurado
 }
 function showVerificationModal(email) {
   console.log('📧 Mostrando modal de verificación para:', email);
@@ -742,8 +756,21 @@ function completeRegistration(email) {
 
 
 async function sendVerificationCode(userData) {
+  // ✅ VERIFICACIÓN EXTRA PARA PREVENIR LLAMADAS VACÍAS
+  if (!userData || !userData.email || !userData.nombre || !userData.password) {
+    console.error('❌ sendVerificationCode: Datos incompletos, abortando:', userData);
+    return { 
+      success: false, 
+      error: 'Datos incompletos para enviar verificación' 
+    };
+  }
+  
   try {
-    console.log('📤 ENVIANDO VERIFICACIÓN - Datos completos:', userData);
+    console.log('📤 ENVIANDO VERIFICACIÓN - Datos completos:', {
+      email: userData.email,
+      nombre: userData.nombre,
+      passwordLength: userData.password ? userData.password.length : 0
+    });
     
     const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
       method: 'POST',

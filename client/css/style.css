@@ -3580,6 +3580,41 @@ footer {
   margin: 0;
 }
 
+.code-inputs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.code-input {
+  width: 45px;
+  height: 55px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.code-input:focus {
+  border-color: #a0522d;
+  box-shadow: 0 0 0 3px rgba(160, 82, 45, 0.1);
+  outline: none;
+}
+
+.countdown {
+  text-align: center;
+  margin: 15px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #a0522d;
+}
+
 .product-modal-admin .modal-header-admin .modal-title i {
     font-size: 2.2rem;
     color: var(--accent-color);

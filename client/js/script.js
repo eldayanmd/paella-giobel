@@ -342,7 +342,9 @@ function setupRegistrationForm(form) {
 function showVerificationModal(email) {
   console.log('📧 Mostrando modal de verificación para:', email);
   
-  // Ocultar el paso 1 y mostrar el paso 2 (verificación)
+  // Guardar el email en sessionStorage para usarlo después
+  sessionStorage.setItem('pendingVerificationEmail', email);
+  
   const step1 = document.getElementById('register-step1');
   const step2 = document.getElementById('register-step2');
   
@@ -350,17 +352,22 @@ function showVerificationModal(email) {
     step1.style.display = 'none';
     step2.style.display = 'block';
     
-    // Actualizar el email en el modal de verificación
+    // Actualizar el email en el modal
     const userEmailElement = document.getElementById('user-email');
-    if (userEmailElement) {
-      userEmailElement.textContent = email;
-    }
+    const verificationEmailInput = document.getElementById('verification-email');
+    
+    if (userEmailElement) userEmailElement.textContent = email;
+    if (verificationEmailInput) verificationEmailInput.value = email;
     
     // Iniciar countdown
     startCountdown(10 * 60); // 10 minutos
     
     // Configurar inputs de código
     setupCodeInputs();
+    
+    // Enfocar el primer input
+    const firstInput = document.querySelector('.code-input');
+    if (firstInput) firstInput.focus();
   }
 }
 
@@ -478,14 +485,27 @@ function setupCodeInputs() {
   const inputs = document.querySelectorAll('.code-input');
   
   inputs.forEach((input, index) => {
+    // Limpiar input
+    input.value = '';
+    
     // Manejar entrada
     input.addEventListener('input', (e) => {
-      if (e.target.value) {
-        if (index < inputs.length - 1) {
-          inputs[index + 1].focus();
-        } else {
-          document.getElementById('verification-form').dispatchEvent(new Event('submit'));
-        }
+      const value = e.target.value;
+      
+      // Solo permitir números
+      if (value && !/^\d$/.test(value)) {
+        e.target.value = '';
+        return;
+      }
+      
+      // Mover al siguiente input si se ingresó un dígito
+      if (value && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+      }
+      
+      // Si es el último dígito, enfocar pero no enviar automáticamente
+      if (value && index === inputs.length - 1) {
+        // Solo enfocar, el usuario debe hacer clic en el botón
       }
     });
     
@@ -493,6 +513,22 @@ function setupCodeInputs() {
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Backspace' && !e.target.value && index > 0) {
         inputs[index - 1].focus();
+      }
+    });
+    
+    // Prevenir pegado
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasteData = e.clipboardData.getData('text');
+      if (pasteData.length === 6 && /^\d+$/.test(pasteData)) {
+        const digits = pasteData.split('');
+        inputs.forEach((input, i) => {
+          if (digits[i]) {
+            input.value = digits[i];
+            // Disparar evento input para activar la lógica de focus
+            input.dispatchEvent(new Event('input'));
+          }
+        });
       }
     });
   });
@@ -534,47 +570,37 @@ function startCountdown(seconds) {
 }
 // Verificación del código
 // Verificación del código
+// Verificación del código - ACTUALIZADO
 document.getElementById('verification-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const email = document.getElementById('email').value;
+  // Obtener el email de sessionStorage
+  const email = sessionStorage.getItem('pendingVerificationEmail');
   const code = Array.from(document.querySelectorAll('.code-input'))
     .map(input => input.value)
     .join('');
   
-  console.log('🔄 Iniciando verificación...', { email, code });
+  console.log('🔍 Verificando código:', { email, code });
   
-  // ✅ VERIFICAR QUE EL CÓDIGO ESTÉ COMPLETO (6 DÍGITOS)
+  // Validar que tengamos email
+  if (!email) {
+    showError('Error: No se encontró el email para verificar. Por favor, inicia el proceso nuevamente.');
+    return;
+  }
+  
+  // Validar código completo
   if (code.length !== 6) {
-    console.log('❌ Código incompleto:', code.length, 'dígitos');
-    
-    // Mostrar mensaje de error
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'alert error';
-    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Código incompleto. Ingresa los 6 dígitos.`;
-    
-    const form = document.getElementById('verification-form');
-    // Remover errores anteriores
-    const existingError = form.querySelector('.alert.error');
-    if (existingError) existingError.remove();
-    
-    form.insertBefore(errorDiv, form.firstChild);
+    showError('Código incompleto. Ingresa los 6 dígitos.');
     return;
   }
   
-  // ✅ PREVENIR MÚLTIPLES ENVÍOS
   const submitBtn = e.target.querySelector('button[type="submit"]');
-  if (submitBtn.disabled) {
-    console.log('⚠️ Verificación ya en progreso...');
-    return;
-  }
+  if (submitBtn.disabled) return;
   
-  // Mostrar estado de carga
   const originalText = submitBtn.innerHTML;
   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
   submitBtn.disabled = true;
 
-  // Variable para controlar si fue exitoso
   let verificationSuccess = false;
 
   try {
@@ -595,46 +621,45 @@ document.getElementById('verification-form').addEventListener('submit', async (e
       throw new Error(data.error || 'Código inválido');
     }
 
-    console.log('✅ Código verificado, procediendo con registro...');
+    console.log('✅ Código verificado correctamente');
     verificationSuccess = true;
     
-    // Si el código es correcto, proceder con el registro
-    completeRegistration(email);
+    // ÉXITO - Mostrar mensaje y cerrar modal
+    showSuccess('¡Registro completado! Tu cuenta ha sido creada exitosamente.');
+    
+    // Guardar token y actualizar UI
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      updateUserUI(data.user);
+    }
+    
+    // Cerrar modal después de 2 segundos
+    setTimeout(() => {
+      const modal = document.getElementById('modal-registro');
+      if (modal) modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      
+      // Limpiar sessionStorage
+      sessionStorage.removeItem('pendingVerificationEmail');
+    }, 2000);
     
   } catch (error) {
     console.error('❌ Error en verificación:', error);
+    showError(error.message);
     
-    // Mostrar mensaje de error
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'alert error';
-    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
-    
-    const form = document.getElementById('verification-form');
-    // Remover errores anteriores
-    const existingError = form.querySelector('.alert.error');
-    if (existingError) existingError.remove();
-    
-    form.insertBefore(errorDiv, form.firstChild);
-    
-    // Resetear inputs solo si el error no es de "código ya usado"
-    if (!error.message.includes('usado') && !error.message.includes('No se encontró')) {
-      document.querySelectorAll('.code-input').forEach(input => {
-        input.value = '';
-        input.style.borderColor = '#ff4d4f';
-        setTimeout(() => input.style.borderColor = '#ddd', 1000);
-      });
-      document.querySelector('.code-input').focus();
-    }
+    // Resetear inputs en caso de error
+    document.querySelectorAll('.code-input').forEach(input => {
+      input.value = '';
+      input.style.borderColor = '#ff4d4f';
+      setTimeout(() => input.style.borderColor = '#ddd', 1000);
+    });
+    document.querySelector('.code-input').focus();
     
   } finally {
-    console.log('🏁 Finalizando verificación...');
-    
-    // ✅ SOLO RE-HABILITAR SI NO FUE EXITOSO
     if (!verificationSuccess) {
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
     } else {
-      // Si fue exitoso, mantener deshabilitado y cambiar texto
       submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verificado';
       submitBtn.style.backgroundColor = '#28a745';
     }
@@ -1234,13 +1259,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Configurar el botón de reenvío de código
-  const resendBtn = document.getElementById('resend-code');
-  if (resendBtn) {
-    resendBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      resendVerificationCode();
-    });
-  }
+ const resendBtn = document.getElementById('resend-code');
+if (resendBtn) {
+  resendBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    const email = sessionStorage.getItem('pendingVerificationEmail');
+    if (!email) {
+      showError('No se encontró el email para reenviar el código.');
+      return;
+    }
+    
+    resendVerificationCode(email);
+  });
+}
+
 
   // Configurar formulario de login directamente
   const loginForm = document.getElementById('form-login');
@@ -2604,17 +2637,11 @@ function setupGoogleLogin() {
     });
   }
 }
-async function resendVerificationCode() {
-    const email = document.getElementById('email').value;
+async function resendVerificationCode(email) {
     const resendBtn = document.getElementById('resend-code');
     const countdownElement = document.querySelector('#countdown span');
 
-    if (!email) {
-        alert('Por favor, ingresa tu correo electrónico primero.');
-        return;
-    }
-
-    // Deshabilitar el botón temporalmente para evitar spam
+    // Deshabilitar el botón temporalmente
     resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
     resendBtn.disabled = true;
 
@@ -2622,8 +2649,7 @@ async function resendVerificationCode() {
         const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
             method: 'POST',
             headers: { 
-                'Content-Type': 'application/json',
-                'X-Request-Source': 'web-client'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ email })
         });
@@ -2634,30 +2660,22 @@ async function resendVerificationCode() {
         }
 
         // Reiniciar el contador
-        startCountdown(15 * 60);
+        startCountdown(10 * 60);
 
         // Mostrar mensaje de éxito
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert success';
-        alertDiv.innerHTML = `<i class="fas fa-check-circle"></i> ¡Código reenviado! Revisa tu correo.`;
-        document.getElementById('verification-form').prepend(alertDiv);
-
-        // Ocultar mensaje después de 3 segundos
-        setTimeout(() => alertDiv.remove(), 3000);
+        showSuccess('¡Código reenviado! Revisa tu correo.');
 
     } catch (error) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert error';
-        alertDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
-        document.getElementById('verification-form').prepend(alertDiv);
+        showError(error.message);
     } finally {
-        // Restaurar el botón después de 30 segundos (para evitar spam)
+        // Restaurar el botón después de 30 segundos
         setTimeout(() => {
-            resendBtn.innerHTML = '<i class="fas fa-redo"></i> No recibí el código, reenviar';
+            resendBtn.innerHTML = '<i class="fas fa-redo"></i> Reenviar código';
             resendBtn.disabled = false;
-        }, 30000); // 30 segundos de cooldown
+        }, 30000);
     }
 }
+
 
 
 class VerificationSystem {

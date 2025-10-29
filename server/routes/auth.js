@@ -33,10 +33,28 @@ const transporter = nodemailer.createTransport({
 
 router.post('/send-verification', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, nombre, password } = req.body; // ← Recibir TODOS los datos
     
     console.log('📧 Iniciando envío de código a:', email);
-
+    
+    // ✅ VERIFICAR SI EL EMAIL YA EXISTE
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      console.log('❌ Email ya registrado:', email);
+      return res.status(400).json({
+        success: false,
+        error: 'Este email ya está registrado. ¿Quieres iniciar sesión?'
+      });
+    }
+    
+    // Validar contraseña
+    if (password && password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'La contraseña debe tener al menos 6 caracteres'
+      });
+    }
+    
     // Generar código de 6 dígitos
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('🔢 Código generado:', code);
@@ -44,15 +62,20 @@ router.post('/send-verification', async (req, res) => {
     // Calcular expiración (10 minutos)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Guardar en base de datos (sin campo 'used')
+    // Guardar datos temporales en la base de datos
     await VerificationCode.create({
       email,
       code,
       expiresAt,
-      attempts: 0
+      attempts: 0,
+      userData: JSON.stringify({ // ← Guardar todos los datos del usuario
+        nombre,
+        password,
+        email
+      })
     });
 
-    console.log('💾 Código guardado en base de datos para:', email);
+    console.log('💾 Datos temporales guardados para:', email);
 
     // Enviar email con Resend
     const { data, error } = await resend.emails.send({
@@ -66,7 +89,7 @@ router.post('/send-verification', async (req, res) => {
           </div>
           
           <div style="background: #f8f8f8; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <p style="margin: 0 0 15px 0; font-size: 16px;">Tu código de verificación es:</p>
+            <p style="margin: 0 0 15px 0; font-size: 16px;">Hola <strong>${nombre}</strong>, tu código de verificación es:</p>
             <div style="background: #ffffff; padding: 25px; text-align: center; font-size: 36px; font-weight: bold; color: #a0522d; letter-spacing: 8px; border: 2px dashed #a0522d; border-radius: 8px;">
               ${code}
             </div>
@@ -74,7 +97,7 @@ router.post('/send-verification', async (req, res) => {
           
           <div style="text-align: center; color: #666; font-size: 14px;">
             <p>Este código expira en <strong>10 minutos</strong>.</p>
-            <p>Si no solicitaste este código, puedes ignorar este mensaje.</p>
+            <p>Si no solicitaste este código, ignora este mensaje.</p>
           </div>
         </div>
       `
@@ -97,7 +120,6 @@ router.post('/send-verification', async (req, res) => {
     });
   }
 });
-
 
 // Ruta temporal para probar email
 router.get('/test-email', async (req, res) => {
@@ -169,21 +191,70 @@ router.post('/verify-code', async (req, res) => {
       });
     }
 
-    // ✅ VUELVE A ELIMINAR EL REGISTRO (como antes)
+    // ✅ OBTENER DATOS DEL USUARIO GUARDADOS
+    const userData = JSON.parse(record.userData || '{}');
+    console.log('📦 Datos del usuario:', userData);
+    
+    if (!userData.nombre || !userData.password) {
+      return res.status(400).json({
+        success: false,
+        error: "Datos de registro incompletos"
+      });
+    }
+
+    // ✅ VERIFICAR NUEVAMENTE QUE EL EMAIL NO EXISTA (doble verificación)
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      await record.destroy();
+      return res.status(400).json({
+        success: false,
+        error: "Este email ya está registrado"
+      });
+    }
+
+    // ✅ CREAR USUARIO AUTOMÁTICAMENTE
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const user = await User.create({
+      nombre: userData.nombre,
+      email: userData.email,
+      password: hashedPassword,
+      auth_method: 'email',
+      profile_complete: true
+    });
+
+    // ✅ GENERAR TOKEN JWT
+    const token = jwt.sign(
+      { 
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // ✅ ELIMINAR CÓDIGO USADO
     await record.destroy();
 
-    console.log('✅ Código verificado y eliminado');
+    console.log('✅ Usuario creado y autenticado:', user.id);
 
     res.json({ 
       success: true,
-      message: "Código verificado correctamente" 
+      message: "Registro completado exitosamente",
+      token,
+      user: {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email
+      }
     });
 
   } catch (error) {
     console.error('Error en verify-code:', error);
     res.status(500).json({ 
       success: false,
-      error: "Error al verificar el código"
+      error: "Error al completar el registro"
     });
   }
 });

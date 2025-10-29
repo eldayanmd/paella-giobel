@@ -756,22 +756,16 @@ function showRegistrationError(message) {
     `;
   }
 }
-async function sendVerificationCode(email) {
+// Función para enviar código (con todos los datos)
+async function sendVerificationCode(userData) {
   try {
-    console.log('📧 Enviando código a:', email);
+    console.log('📧 Enviando código con datos:', userData);
     
-    // Timeout de 15 segundos
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
     const response = await fetch(`${BASE_URL}/api/auth/send-verification`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-      signal: controller.signal
+      body: JSON.stringify(userData) // ← Enviar TODOS los datos
     });
-
-    clearTimeout(timeoutId);
     
     const result = await response.json();
     console.log('📧 Respuesta del servidor:', result);
@@ -779,14 +773,35 @@ async function sendVerificationCode(email) {
     return result;
   } catch (error) {
     console.error('❌ Error enviando código:', error);
-    
-    if (error.name === 'AbortError') {
-      return { success: false, error: 'Timeout: El servidor tardó demasiado en responder' };
-    }
-    
     return { success: false, error: 'Error de conexión' };
   }
 }
+
+// En tu formulario de registro, enviar TODOS los datos
+registrationForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const userData = {
+    nombre: document.getElementById('nombre').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value
+  };
+  
+  // Validaciones básicas
+  if (userData.password.length < 6) {
+    showError('La contraseña debe tener al menos 6 caracteres');
+    return;
+  }
+  
+  const result = await sendVerificationCode(userData);
+  
+  if (result.success) {
+    // Mostrar modal de verificación
+    showVerificationModal(userData.email);
+  } else {
+    showError(result.error);
+  }
+});
 function setupGoogleAuth() {
   document.querySelectorAll('.btn-social.google').forEach(btn => {
     btn.addEventListener('click', function(e) {

@@ -1,4 +1,4 @@
-// VerificationCode.js
+// VerificationCode.js - VERSIÓN TEMPORAL
 module.exports = (sequelize, DataTypes) => {
   const VerificationCode = sequelize.define('VerificationCode', {
     email: {
@@ -24,12 +24,8 @@ module.exports = (sequelize, DataTypes) => {
         min: 0,
         max: 5
       }
-    },
-    used: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      field: 'used'
     }
+    // QUITA el campo 'used' temporalmente
   }, {
     tableName: 'verification_codes',
     timestamps: true,

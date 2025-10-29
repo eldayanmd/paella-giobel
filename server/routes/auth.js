@@ -44,11 +44,12 @@ router.post('/send-verification', async (req, res) => {
     // Calcular expiración (10 minutos)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Guardar en base de datos
+    // Guardar en base de datos (sin campo 'used')
     await VerificationCode.create({
       email,
       code,
-      expiresAt
+      expiresAt,
+      attempts: 0
     });
 
     console.log('💾 Código guardado en base de datos para:', email);
@@ -131,14 +132,10 @@ router.post('/verify-code', async (req, res) => {
     console.log('🔍 Verificando código:', { email, code });
 
     // Buscar el código en la base de datos
-  const record = await VerificationCode.findOne({
-  where: { 
-    email,
-    used: false,
-    expiresAt: { [Op.gt]: new Date() }
-  },
-  order: [['createdAt', 'DESC']]
-});
+    const record = await VerificationCode.findOne({
+      where: { email },
+      order: [['createdAt', 'DESC']]
+    });
 
     console.log('📋 Registro encontrado:', record ? 'SÍ' : 'NO');
 
@@ -172,13 +169,10 @@ router.post('/verify-code', async (req, res) => {
       });
     }
 
-    // ✅ CAMBIO: Marcar como usado en lugar de eliminar
-    await record.update({ 
-      used: true,
-      attempts: record.attempts + 1 // Marcar como "usado"
-    });
+    // ✅ VUELVE A ELIMINAR EL REGISTRO (como antes)
+    await record.destroy();
 
-    console.log('✅ Código verificado y marcado como usado');
+    console.log('✅ Código verificado y eliminado');
 
     res.json({ 
       success: true,

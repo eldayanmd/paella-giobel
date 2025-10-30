@@ -14,6 +14,43 @@ const fs = require('fs');
 
 const app = express();
 
+
+app.get('/sitemap.xml', (req, res) => {
+  const sitemapPath = path.join(__dirname, '../client/sitemap.xml');
+  
+  // Verificar que el archivo existe
+  if (fs.existsSync(sitemapPath)) {
+    res.setHeader('Content-Type', 'application/xml');
+    res.sendFile(sitemapPath);
+  } else {
+    // Si no existe, generar uno dinámico
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://paella-giobel.onrender.com/</loc>
+    <lastmod>2024-10-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`);
+  }
+});
+
+// Servir robots.txt
+app.get('/robots.txt', (req, res) => {
+  const robotsPath = path.join(__dirname, '../client/robots.txt');
+  
+  if (fs.existsSync(robotsPath)) {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(robotsPath);
+  } else {
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(`User-agent: *\nAllow: /\n\nSitemap: https://paella-giobel.onrender.com/sitemap.xml`);
+  }
+});
+
+
 // ✅ CONFIGURACIÓN CRÍTICA PARA RAILWAY - DEBE IR AL INICIO
 app.set('trust proxy', 1);
 
